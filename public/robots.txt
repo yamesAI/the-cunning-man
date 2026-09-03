@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://cunning-man-davids-projects-76350782.vercel.app/sitemap.xml
+Sitemap: https://cunning-man.vercel.app/sitemap.xml
