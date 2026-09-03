@@ -23,7 +23,7 @@ export const PRESS: PressItem[] = [
       "Around it stand the working tools: a synastry meter that weighs two birth charts for sympathy, an electional engine that names the strongest hour in the coming week to launch a venture, a chaos sigil engine after the method of Austin Osman Spare, and rune casts in the manner of the Norns.",
       "“The cunning man of the village never charged for the sight of the sky,” said the site's keeper. “He charged for the work of interpretation. The sky is free, so these instruments are free.”",
       "Every tool runs in the browser with its own astronomical engine — tropical, geocentric, Regiomontanus houses — and keeps its honest disclaimer: these arts are offered for study and entertainment, not as financial, medical, or legal advice.",
-      "The full collection is open now at thecunningman.app — no account, no fee, no catch.",
+      "The full collection is open now at cunning-man.vercel.app — no account, no fee, no catch.",
     ],
   },
   {
@@ -38,7 +38,7 @@ export const PRESS: PressItem[] = [
       "The scanner follows the classical doctrine of elections: the condition of the Moon, her next perfecting aspect, the angularity of Jupiter, Venus and Mercury, and the dignity of the Ascendant ruler. Periods when the Moon is void of course, combust, or in the via combusta are displayed plainly as hours not to trade.",
       "“Traders already watch clocks, sessions, and calendars,” the site's keeper said. “This is simply the oldest clock of all, drawn properly, with the hours marked where the old books say to stand aside.”",
       "The instrument is free and requires no account. It is offered for study and entertainment, and is not financial advice.",
-      "The clock is live now at thecunningman.app/clock.",
+      "The clock is live now at cunning-man.vercel.app/clock.",
     ],
   },
   {
@@ -52,7 +52,7 @@ export const PRESS: PressItem[] = [
       "The Cunning Man has released its Synastry Meter, a free tool that casts two natal charts and weighs one against the other by the classical doctrine of sympathy and antipathy.",
       "Where most compatibility gadgets report a silent number, the Synastry Meter shows its work: each testimony — Sun to Moon, Venus to Mars, Ascendant to the lights, and the heaviness of Saturn — is listed with its aspect, its orb, and its weight, before the needle settles on a score from 0 to 100.",
       "“Lovers have asked the stars about each other since there were stars and lovers,” said the keeper. “We only insist the arithmetic be visible.”",
-      "The meter is free, instant, and requires no sign-up: thecunningman.app/synastry.",
+      "The meter is free, instant, and requires no sign-up: cunning-man.vercel.app/synastry.",
     ],
   },
   {
@@ -66,7 +66,7 @@ export const PRESS: PressItem[] = [
       "The Cunning Man today added a Sigil Engine to its free collection, automating the letter-reduction method of Austin Osman Spare, the foundation of modern chaos magic.",
       "A visitor writes a statement of intent in the present tense; the engine strikes the vowels, removes repeated letters, and binds the survivors into a single glyph drawn across the wheel of the alphabet, with a marked beginning and end. The full reduction is displayed so the method can be learned, not merely consumed.",
       "Traditional charging instructions accompany each sigil: copy it by hand, gaze at it at the height of gnosis, then destroy or bury the drawing and put the matter out of mind.",
-      "The engine is free at thecunningman.app/sigil, and pairs with the site's planetary-hour spell timing for love and money workings.",
+      "The engine is free at cunning-man.vercel.app/sigil, and pairs with the site's planetary-hour spell timing for love and money workings.",
     ],
   },
   {
@@ -80,7 +80,7 @@ export const PRESS: PressItem[] = [
       "The Cunning Man has opened its Rune Cast, a free instrument drawing lots from the full twenty-four staves of the Elder Futhark without replacement — as a handful of runes drawn from a bag, not a shuffled deck.",
       "Visitors may draw a single rune for a swift answer or the three-Norn spread — what has been, what is, and what may come. Each stave is read plainly: its core meaning first, then its counsel in love and in money, in the manner of the old cunning-folk readers.",
       "“The runes were always a poor man's oracle — carved on sticks, cast on cloth,” said the keeper. “They cost nothing then. They cost nothing now.”",
-      "The cast is free and instant at thecunningman.app/runes.",
+      "The cast is free and instant at cunning-man.vercel.app/runes.",
     ],
   },
 ];
