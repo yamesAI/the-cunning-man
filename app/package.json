@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "check:natal": "vite-node scripts/check-natal.ts",
     "check:transits": "vite-node scripts/check-transits.ts",
-    "check:tradition": "vite-node scripts/check-tradition.ts"
+    "check:tradition": "vite-node scripts/check-tradition.ts",
+    "check:perf": "vite-node scripts/check-perf.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

@@ -8,15 +8,31 @@
 //     https://theastroscope.com/astrology/retrogrades/saturn-2026
 // Run: npm run check:transits
 
-import { computeChart, buildHoroscope, lonOf } from "../src/astro/engine";
+import { computeChart, buildHoroscope, lonOf, type ChartData } from "../src/astro/engine";
 import { angleDiff } from "../src/astro/format";
 import {
   findExactSeparation,
   transitsToNatal,
+  exactTimesForHits,
   sortTransitHits,
   sortAspectCells,
   EXACT_WINDOW_MS,
+  type TransitHit,
 } from "../src/astro/transits";
+
+// transitsToNatal detects hits; exact times come from the batched tier-able
+// search. This helper pairs them the way the UI does.
+function withExact(
+  natal: ChartData,
+  current: ChartData,
+  pred: (h: TransitHit) => boolean
+): TransitHit {
+  const hits = transitsToNatal(natal, current);
+  const times = exactTimesForHits(hits, natal, current.date, current.lat, current.lng);
+  const h = hits.find(pred);
+  if (!h) throw new Error("FAIL: expected transit hit not found");
+  return { ...h, exactAt: times.get(h) ?? null };
+}
 
 const L = { lat: 51.5074, lng: -0.1278 };
 const DAY = 86400000;
@@ -105,13 +121,14 @@ const saturnLon = (t: number | Date) => lonOf(buildHoroscope(new Date(t), L.lat,
   assert(bestD < 0.02, `natal sun placed within 0.02° (got ${bestD})`);
   const natal = computeChart(new Date(bestT), L.lat, L.lng);
   const current = computeChart(new Date(FULL_MOON.getTime() - 4 * HOUR), L.lat, L.lng);
-  const hit = transitsToNatal(natal, current).find(
+  const hit = withExact(
+    natal,
+    current,
     (h) => h.transiting === "moon" && h.natalPoint === "sun" && h.aspectKey === "opposition"
   );
-  assert(hit, "lunar case: hit exists 4h before full moon");
-  assert(hit!.applying, "lunar case: applying before full");
-  assert(hit!.exactAt, "lunar case: exactAt found");
-  approx(hit!.exactAt!.getTime(), FULL_MOON.getTime(), 30 * 60000, "lunar exact vs published full moon");
+  assert(hit.applying, "lunar case: applying before full");
+  assert(hit.exactAt, "lunar case: exactAt found");
+  approx(hit.exactAt!.getTime(), FULL_MOON.getTime(), 30 * 60000, "lunar exact vs published full moon");
 }
 
 // ---- Case B (Saturn, retrograde): first pass, not a later station pass ----
@@ -142,12 +159,13 @@ const saturnLon = (t: number | Date) => lonOf(buildHoroscope(new Date(t), L.lat,
   assert(birthB, "saturn case: natal instant found");
   const natal = computeChart(new Date(birthB), L.lat, L.lng);
   const current = computeChart(new Date("2026-11-15T00:00:00Z"), L.lat, L.lng);
-  const hit = transitsToNatal(natal, current).find(
+  const hit = withExact(
+    natal,
+    current,
     (h) => h.transiting === "saturn" && h.natalPoint === "saturn" && h.aspectKey === "conjunction"
   );
-  assert(hit, "saturn case: conjunction hit exists mid-retrograde");
-  assert(hit!.applying, "saturn case: applying as it descends toward the station");
-  assert(hit!.exactAt, "saturn case: exactAt found");
+  assert(hit.applying, "saturn case: applying as it descends toward the station");
+  assert(hit.exactAt, "saturn case: exactAt found");
   assert(
     hit!.exactAt!.getTime() <= STATION_DIRECT.getTime() + DAY,
     "saturn case: first pass — exactness is NOT after the direct station"
@@ -159,11 +177,12 @@ const saturnLon = (t: number | Date) => lonOf(buildHoroscope(new Date(t), L.lat,
 {
   const natal = computeChart(new Date("1985-04-12T08:30:00Z"), L.lat, L.lng);
   const current = computeChart(new Date("2026-04-11T00:00:00Z"), L.lat, L.lng);
-  const hit = transitsToNatal(natal, current).find(
+  const hit = withExact(
+    natal,
+    current,
     (h) => h.transiting === "sun" && h.natalPoint === "sun" && h.aspectKey === "conjunction"
   );
-  assert(hit, "solar return: hit exists");
-  assert(hit!.exactAt, "solar return: exactAt found");
+  assert(hit.exactAt, "solar return: exactAt found");
   approx(hit!.exactAt!.getTime(), Date.UTC(2026, 3, 12, 8, 30), DAY, "solar return exact on anniversary");
 }
 

@@ -33,6 +33,18 @@ export default function Home() {
   const [showOuters, setShowOuters] = useState(true);
   const tiltRef = useTilt<HTMLDivElement>();
 
+  // keep the manual-entry fields honest when a geo acquisition lands —
+  // render-adjust pattern (setState during render is the documented idiom),
+  // so typing is never stomped: loc only changes identity on acquisition
+  const [prevLoc, setPrevLoc] = useState(loc);
+  if (loc !== prevLoc) {
+    setPrevLoc(loc);
+    if (loc.source === "geo") {
+      setLatText(String(loc.lat));
+      setLngText(String(loc.lng));
+    }
+  }
+
   // the moment being displayed: live time plus any manual offset
   const viewTime = new Date(now.getTime() + offsetMs);
   const secBucket = Math.floor(viewTime.getTime() / 1000);
@@ -137,11 +149,7 @@ export default function Home() {
             Set
           </button>
           <button
-            onClick={() => {
-              refreshLocation();
-              setLatText(String(loc.lat));
-              setLngText(String(loc.lng));
-            }}
+            onClick={refreshLocation}
             className="shrink-0 border border-line bg-card px-2 py-0.5 hover:bg-parchment-deep"
           >
             📍 My location

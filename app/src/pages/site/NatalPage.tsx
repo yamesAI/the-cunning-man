@@ -4,7 +4,7 @@
 import { useMemo, useState, type ReactElement } from "react";
 import { useSky } from "@/sky/sky-context";
 import { computeChart } from "@/astro/engine";
-import { transitsToNatal, sortTransitHits, type TransitHit } from "@/astro/transits";
+import { transitsToNatal, sortTransitHits, exactTimesForHits, type TransitHit } from "@/astro/transits";
 import { ASPECT_GLYPH, PLANET_LABEL, SIGN_GLYPH, SIGN_LABEL } from "@/astro/constants";
 import { fmtDegMin } from "@/astro/format";
 import { lookupTestimony } from "@/data/tradition";
@@ -16,7 +16,7 @@ import { TestimonyCard } from "@/components/TestimonyCard";
 import { useMeta } from "@/hooks/useMeta";
 import { useJsonLd } from "@/hooks/useJsonLd";
 
-function TransitRow({ hit, now }: { hit: TransitHit; now: Date }): ReactElement {
+function TransitRow({ hit, exactAt, now }: { hit: TransitHit; exactAt: Date | null; now: Date }): ReactElement {
   const testimony = lookupTestimony(hit.transiting, hit.aspectKey);
   return (
     <li className="py-2 border-b border-line/60 last:border-0">
@@ -30,7 +30,7 @@ function TransitRow({ hit, now }: { hit: TransitHit; now: Date }): ReactElement 
         <span className="text-ink-soft">
           {" "}
           · {hit.orb.toFixed(1)}° {hit.applying ? "applying" : "separating"} ·{" "}
-          {exactLabel(hit, now)}
+          {exactLabel({ applying: hit.applying, exactAt }, now)}
         </span>
       </p>
       <p className="sr-only">{hitLine(hit)}</p>
@@ -59,7 +59,7 @@ export default function NatalPage(): ReactElement {
   const [profile, setProfile] = useState<NatalProfile | null>(() => loadNatal());
   const [editing, setEditing] = useState(false);
 
-  const bucket60 = Math.floor(now.getTime() / 60000);
+  const bucket5 = Math.floor(now.getTime() / 300000);
   const natalChart = useMemo(
     () => (profile ? computeChart(new Date(profile.birth), profile.lat, profile.lng) : null),
     [profile]
@@ -67,11 +67,27 @@ export default function NatalPage(): ReactElement {
   const currentChart = useMemo(
     () => computeChart(now, loc.lat, loc.lng),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [bucket60, loc.lat, loc.lng]
+    [bucket5, loc.lat, loc.lng]
   );
   const hits = useMemo(
     () => (natalChart ? sortTransitHits(transitsToNatal(natalChart, currentChart)) : []),
     [natalChart, currentChart]
+  );
+  // exact-hit dates in two tiers: Moon times move fast (5-min recompute),
+  // slow-planet dates barely move (30-min recompute)
+  const bucket30 = Math.floor(now.getTime() / 1800000);
+  const moonHits = useMemo(() => hits.filter((h) => h.transiting === "moon"), [hits]);
+  const slowHits = useMemo(() => hits.filter((h) => h.transiting !== "moon"), [hits]);
+  const moonTimes = useMemo(
+    () => (natalChart ? exactTimesForHits(moonHits, natalChart, currentChart.date, currentChart.lat, currentChart.lng) : new Map()),
+    [moonHits, natalChart, currentChart]
+  );
+  const slowTimes = useMemo(
+    () =>
+      natalChart
+        ? exactTimesForHits(slowHits, natalChart, new Date(bucket30 * 1800000), currentChart.lat, currentChart.lng)
+        : new Map(),
+    [bucket30, slowHits, natalChart, currentChart.lat, currentChart.lng]
   );
 
   if (!profile || editing) {
@@ -184,7 +200,16 @@ export default function NatalPage(): ReactElement {
         {hits.length === 0 ? (
           <p className="text-[13px] text-ink-soft">No transiting aspects within orb just now.</p>
         ) : (
-          <ul>{hits.map((h, i) => <TransitRow key={i} hit={h} now={now} />)}</ul>
+          <ul>
+            {hits.map((h, i) => (
+              <TransitRow
+                key={i}
+                hit={h}
+                exactAt={(h.transiting === "moon" ? moonTimes : slowTimes).get(h) ?? null}
+                now={now}
+              />
+            ))}
+          </ul>
         )}
       </section>
     </div>
@@ -209,6 +234,18 @@ function NatalForm({
   const [latText, setLatText] = useState(String(initial?.lat ?? loc.lat));
   const [lngText, setLngText] = useState(String(initial?.lng ?? loc.lng));
   const [error, setError] = useState<string | null>(null);
+
+  // fill the form when a geo acquisition lands — render-adjust pattern, never
+  // the click-time closure (that would copy stale coordinates)
+  const [prevLoc, setPrevLoc] = useState(loc);
+  if (loc !== prevLoc) {
+    setPrevLoc(loc);
+    if (loc.source === "geo") {
+      setLatText(String(loc.lat));
+      setLngText(String(loc.lng));
+      setPlaceName(loc.name);
+    }
+  }
 
   const submit = () => {
     const lat = parseFloat(latText);
@@ -325,12 +362,7 @@ function NatalForm({
         </label>
         <button
           type="button"
-          onClick={() => {
-            refreshLocation();
-            setLatText(String(loc.lat));
-            setLngText(String(loc.lng));
-            setPlaceName(loc.name);
-          }}
+          onClick={refreshLocation}
           className="border border-line bg-card px-2 py-1 text-[13px] hover:bg-parchment-deep"
         >
           📍 Use current location
