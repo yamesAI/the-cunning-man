@@ -49,7 +49,7 @@ export default function NatalPage(): ReactElement {
     "@context": "https://schema.org",
     "@type": "WebApplication",
     name: "The Cunning Man — Natal Chart & Live Transits",
-    url: "https://the-cunning-man-davids-projects-76350782.vercel.app/natal",
+    url: "https://the-cunning-man.vercel.app/natal",
     applicationCategory: "LifestyleApplication",
     operatingSystem: "Any (web browser)",
     offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },

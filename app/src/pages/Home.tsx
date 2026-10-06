@@ -19,7 +19,7 @@ export default function Home() {
     "@context": "https://schema.org",
     "@type": "WebApplication",
     name: "The Cunning Man — Shield Astrological Clock",
-    url: "https://the-cunning-man-davids-projects-76350782.vercel.app/clock",
+    url: "https://the-cunning-man.vercel.app/clock",
     applicationCategory: "LifestyleApplication",
     operatingSystem: "Any (web browser)",
     offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
