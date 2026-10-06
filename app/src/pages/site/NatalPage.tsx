@@ -124,7 +124,7 @@ export default function NatalPage(): ReactElement {
               The natal figure
             </h2>
             <div className="wheel-frame manor-card aspect-square w-full max-w-[440px] mx-auto">
-              <SquareChart chart={natalChart} showOuters={false} />
+              <SquareChart chart={natalChart} showOuters={false} centralTitle="Natal Figure" />
             </div>
           </section>
 

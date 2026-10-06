@@ -73,3 +73,9 @@ export const ASPECT_DEFS: ReadonlyArray<{
   { angle: 120, key: "trine", orb: 7 },
   { angle: 180, key: "opposition", orb: 8 },
 ];
+
+// Aspect colours for the aspectarian matrix (data, like the sign colours).
+export const ASPECT_COLOR: Record<AspectKey, string> = {
+  conjunction: "#b9770e", sextile: "#1e8449", trine: "#2471a3",
+  square: "#c0392b", opposition: "#c0392b",
+};

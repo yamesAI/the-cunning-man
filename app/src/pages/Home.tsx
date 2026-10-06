@@ -7,6 +7,7 @@ import { fmtDur } from "@/astro/format";
 import { useSky } from "@/sky/sky-context";
 import { CITIES } from "@/data/cities";
 import { SquareChart } from "@/components/SquareChart";
+import { useTilt } from "@/hooks/useTilt";
 import { ActiveTransitsPanel } from "@/components/ActiveTransitsPanel";
 import {
   PositionsPanel, DignitiesPanel, MoonAspectsPanel, AspectGridPanel, PlanetaryHoursPanel, MoonPanel, ElectionPanel,
@@ -18,6 +19,7 @@ export default function Home() {
   const [latText, setLatText] = useState(String(loc.lat));
   const [lngText, setLngText] = useState(String(loc.lng));
   const [showOuters, setShowOuters] = useState(true);
+  const tiltRef = useTilt<HTMLDivElement>();
 
   // the moment being displayed: live time plus any manual offset
   const viewTime = new Date(now.getTime() + offsetMs);
@@ -54,36 +56,36 @@ export default function Home() {
     CITIES.find((c) => Math.abs(c.lat - loc.lat) < 0.01 && Math.abs(c.lng - loc.lng) < 0.01)?.name ?? "";
 
   return (
-    <div data-kimi-root className="kimi-host-safe-context min-h-screen lg:h-screen lg:overflow-hidden flex flex-col bg-[#f3f1df] text-neutral-900" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
+    <div data-kimi-root className="kimi-host-safe-context min-h-screen lg:h-screen lg:overflow-hidden flex flex-col bg-parchment text-ink font-ui">
       {/* header */}
-      <header data-kimi-priority="p1" className="kimi-host-safe-header shrink-0 border-b-2 border-neutral-700 bg-[#efeedd] px-4 py-2 flex flex-wrap items-center gap-x-6 gap-y-2">
+      <header data-kimi-priority="p1" className="kimi-host-safe-header shrink-0 border-b-2 border-line bg-parchment-deep px-4 py-2 flex flex-wrap items-center gap-x-6 gap-y-2">
         <div>
           <h1 className="text-xl font-bold tracking-wide">Shield Astrological Clock</h1>
-          <p className="text-[11px] italic text-neutral-600">Live traditional chart · updates every second</p>
+          <p className="text-[11px] italic text-ink-soft">Live traditional chart · updates every second</p>
         </div>
         <div className="font-mono text-lg tabular-nums" aria-live="off">
-          {chart.wallClock} <span className="text-[12px] text-neutral-600">{chart.tzLabel}</span>
+          {chart.wallClock} <span className="text-[12px] text-ink-soft">{chart.tzLabel}</span>
           {offsetMs !== 0 && (
-            <span className="ml-2 text-[11px] font-bold text-red-800 bg-yellow-200 border border-neutral-600 px-1">
+            <span className="ml-2 text-[11px] font-bold text-seal-deep bg-brass/20 border border-line px-1">
               {offsetMs > 0 ? "+" : "−"}{fmtDur(Math.abs(offsetMs))} from live
             </span>
           )}
         </div>
         <div className="flex items-center gap-1 text-[12px] flex-wrap">
           <span className="font-bold shrink-0">Time</span>
-          <button onClick={() => stepTime(-86400000)} className="border border-neutral-600 bg-white px-1.5 py-0.5 hover:bg-neutral-100">◀ day</button>
-          <button onClick={() => stepTime(-3600000)} className="border border-neutral-600 bg-white px-1.5 py-0.5 hover:bg-neutral-100">◀ hr</button>
-          <button onClick={() => stepAsc(-1)} title="Jump to previous Ascendant sign change" className="border border-neutral-600 bg-white px-1.5 py-0.5 hover:bg-neutral-100">◀ asc</button>
+          <button onClick={() => stepTime(-86400000)} className="border border-line bg-card px-1.5 py-0.5 hover:bg-parchment-deep">◀ day</button>
+          <button onClick={() => stepTime(-3600000)} className="border border-line bg-card px-1.5 py-0.5 hover:bg-parchment-deep">◀ hr</button>
+          <button onClick={() => stepAsc(-1)} title="Jump to previous Ascendant sign change" className="border border-line bg-card px-1.5 py-0.5 hover:bg-parchment-deep">◀ asc</button>
           <button
             onClick={() => setOffsetMs(0)}
             disabled={offsetMs === 0}
-            className="border border-neutral-600 bg-yellow-100 px-1.5 py-0.5 hover:bg-yellow-200 disabled:opacity-40 font-bold"
+            className="border border-brass bg-brass/15 px-1.5 py-0.5 hover:bg-brass/25 disabled:opacity-40 font-bold"
           >
             ⟲ live
           </button>
-          <button onClick={() => stepAsc(1)} title="Jump to next Ascendant sign change" className="border border-neutral-600 bg-white px-1.5 py-0.5 hover:bg-neutral-100">asc ▶</button>
-          <button onClick={() => stepTime(3600000)} className="border border-neutral-600 bg-white px-1.5 py-0.5 hover:bg-neutral-100">hr ▶</button>
-          <button onClick={() => stepTime(86400000)} className="border border-neutral-600 bg-white px-1.5 py-0.5 hover:bg-neutral-100">day ▶</button>
+          <button onClick={() => stepAsc(1)} title="Jump to next Ascendant sign change" className="border border-line bg-card px-1.5 py-0.5 hover:bg-parchment-deep">asc ▶</button>
+          <button onClick={() => stepTime(3600000)} className="border border-line bg-card px-1.5 py-0.5 hover:bg-parchment-deep">hr ▶</button>
+          <button onClick={() => stepTime(86400000)} className="border border-line bg-card px-1.5 py-0.5 hover:bg-parchment-deep">day ▶</button>
         </div>
         <div className="flex items-center gap-2 text-[12px] flex-wrap">
           <label className="flex items-center gap-1 shrink-0">
@@ -99,7 +101,7 @@ export default function Home() {
                   setLngText(String(city.lng));
                 }
               }}
-              className="border border-neutral-500 bg-white px-1 py-0.5"
+              className="border border-line bg-card px-1 py-0.5"
             >
               <option value="">{loc.name}</option>
               {CITIES.map((c) => (
@@ -112,14 +114,14 @@ export default function Home() {
           <label className="flex items-center gap-1 shrink-0">
             Lat
             <input value={latText} onChange={(e) => setLatText(e.target.value)}
-              className="w-20 border border-neutral-500 bg-white px-1 py-0.5" />
+              className="w-20 border border-line bg-card px-1 py-0.5" />
           </label>
           <label className="flex items-center gap-1 shrink-0">
             Lng
             <input value={lngText} onChange={(e) => setLngText(e.target.value)}
-              className="w-20 border border-neutral-500 bg-white px-1 py-0.5" />
+              className="w-20 border border-line bg-card px-1 py-0.5" />
           </label>
-          <button onClick={applyCoords} className="shrink-0 border border-neutral-600 bg-white px-2 py-0.5 hover:bg-neutral-100">
+          <button onClick={applyCoords} className="shrink-0 border border-line bg-card px-2 py-0.5 hover:bg-parchment-deep">
             Set
           </button>
           <button
@@ -128,7 +130,7 @@ export default function Home() {
               setLatText(String(loc.lat));
               setLngText(String(loc.lng));
             }}
-            className="shrink-0 border border-neutral-600 bg-white px-2 py-0.5 hover:bg-neutral-100"
+            className="shrink-0 border border-line bg-card px-2 py-0.5 hover:bg-parchment-deep"
           >
             📍 My location
           </button>
@@ -151,7 +153,7 @@ export default function Home() {
 
         {/* center wheel — P0: first on narrow surfaces, as large as the viewport allows */}
         <div data-kimi-priority="p0" className="order-first lg:order-none flex-1 min-w-[280px] min-h-0 flex items-center justify-center">
-          <div className="wheel-frame border border-neutral-600 bg-[#fbfadf] shadow-sm aspect-square w-full lg:w-auto lg:h-full max-h-full max-w-full mx-auto">
+          <div ref={tiltRef} className="wheel-frame manor-card aspect-square w-full lg:w-auto lg:h-full max-h-full max-w-full mx-auto transition-transform duration-150">
             <SquareChart chart={chart} showOuters={showOuters} />
           </div>
         </div>
@@ -165,7 +167,7 @@ export default function Home() {
         </div>
       </main>
 
-      <footer data-kimi-priority="p3" className="shrink-0 px-4 pb-2 text-[11px] italic text-neutral-500">
+      <footer data-kimi-priority="p3" className="shrink-0 px-4 pb-2 text-[11px] italic text-ink-soft">
         Tropical zodiac · Geocentric · Regiomontanus houses · Egyptian terms · Live geocentric positions
         recomputed in your browser — in the tradition of Renaissance astrology.
       </footer>

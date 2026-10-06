@@ -48,7 +48,7 @@ function SkyPill() {
           const city = CITIES.find((c) => c.name === e.target.value);
           if (city) setLoc({ ...city, source: "manual" });
         }}
-        className="border border-[#5a3d1e] bg-white px-1 py-0.5"
+        className="border border-line bg-card px-1 py-0.5"
       >
         <option value="" disabled>
           City…
@@ -62,7 +62,7 @@ function SkyPill() {
       <button
         onClick={refreshLocation}
         title="Use my current location"
-        className="border border-[#5a3d1e] bg-white px-1.5 py-0.5 hover:bg-neutral-100"
+        className="border border-line bg-card px-1.5 py-0.5 hover:bg-parchment-deep"
       >
         📍
       </button>
@@ -75,13 +75,13 @@ export function SiteLayout({ children }: { children: ReactNode }) {
   const onClock = pathname === "/clock";
   if (inIframe) return <>{children}</>;
   return (
-    <div className="min-h-screen bg-[#f0e8d0] text-[#2b1d0e]" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
-      <header className="border-b-4 border-double border-[#5a3d1e] bg-[#e8dcbc]">
+    <div className="min-h-screen bg-parchment text-ink font-ui">
+      <header className="border-b-4 border-double border-line bg-parchment-deep">
         <div className="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center gap-x-5 gap-y-2">
-          <Link to="/" className="text-2xl font-bold tracking-wide" style={{ fontVariant: "small-caps" }}>
+          <Link to="/" className="text-2xl font-bold tracking-wide font-display font-smallcaps">
             ⛥ The Cunning Man
           </Link>
-          <span className="text-[12px] italic text-[#6b5537]">Free arts of Renaissance astrology · chaos magic · the runes</span>
+          <span className="text-[12px] italic text-ink-soft">Free arts of Renaissance astrology · chaos magic · the runes</span>
           <div className="ml-auto">
             <SkyPill />
           </div>
@@ -91,7 +91,11 @@ export function SiteLayout({ children }: { children: ReactNode }) {
                 key={n.to}
                 to={n.to}
                 className={({ isActive }) =>
-                  `px-2 py-1 border ${isActive ? "bg-[#7a1f1f] text-[#f5eeda] border-[#7a1f1f]" : "border-[#5a3d1e] hover:bg-[#ddce9f]"}`
+                  `px-2 py-1 border font-display ${
+                    isActive
+                      ? "bg-seal text-card border-seal-deep"
+                      : "border-line hover:bg-parchment-deep"
+                  }`
                 }
               >
                 {n.label}
@@ -105,8 +109,8 @@ export function SiteLayout({ children }: { children: ReactNode }) {
       ) : (
         <main className="max-w-6xl mx-auto px-4 py-6">{children}</main>
       )}
-      <footer className="border-t-4 border-double border-[#5a3d1e] bg-[#e8dcbc] mt-8">
-        <div className="max-w-6xl mx-auto px-4 py-4 text-[12px] text-[#6b5537] flex flex-wrap gap-x-6 gap-y-1">
+      <footer className="border-t-4 border-double border-line bg-parchment-deep mt-8">
+        <div className="max-w-6xl mx-auto px-4 py-4 text-[12px] text-ink-soft flex flex-wrap gap-x-6 gap-y-1">
           <span>☿ The Cunning Man — all arts free of charge</span>
           <span className="italic">For entertainment &amp; study. Not financial, medical, or legal advice.</span>
           <span className="ml-auto italic">Tropical · Geocentric · Regiomontanus</span>

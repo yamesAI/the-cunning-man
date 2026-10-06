@@ -3,20 +3,19 @@
 import type { ChartData } from "@/astro/engine";
 import type { ElectionScan } from "@/astro/election";
 import {
-  PLANET_COLOR, PLANET_GLYPH, PLANET_LABEL, SIGN_COLOR, SIGN_GLYPH,
-  ASPECT_GLYPH, PLANETS, type PlanetKey,
+  PLANET_COLOR, PLANET_GLYPH, PLANET_LABEL, SIGN_COLOR, SIGN_GLYPH, SIGN_LABEL,
+  ASPECT_GLYPH, ASPECT_COLOR, PLANETS, type PlanetKey,
 } from "@/astro/constants";
 import { fmtTimeTz, fmtDur, pad } from "@/astro/format";
 import type { ReactNode } from "react";
 
-const th = "border border-neutral-500 px-1.5 py-0.5 text-[12px] font-bold bg-[#efeedd]";
-const td = "border border-neutral-500 px-1.5 py-0.5 text-[13px]";
+const td = "border border-line px-1.5 py-0.5 text-[13px]";
 
 export function Panel({ title, children, right }: { title: string; children: ReactNode; right?: ReactNode }) {
   return (
-    <section className="border border-neutral-600 bg-[#fdfdf2]">
-      <header className="border-b border-neutral-600 bg-[#efeedd] px-2 py-1 flex items-baseline justify-between">
-        <h2 className="text-[12px] font-bold tracking-wide uppercase">{title}</h2>
+    <section className="border border-line bg-card">
+      <header className="border-b border-line bg-parchment-deep px-2 py-1 flex items-baseline justify-between">
+        <h2 className="text-[12px] font-bold tracking-wide uppercase font-display">{title}</h2>
         {right}
       </header>
       <div className="p-1">{children}</div>
@@ -25,30 +24,33 @@ export function Panel({ title, children, right }: { title: string; children: Rea
 }
 
 const Glyph = ({ p, size = 14 }: { p: PlanetKey; size?: number }) => (
-  <span style={{ color: PLANET_COLOR[p], fontSize: size }}>{PLANET_GLYPH[p]}</span>
+  <span style={{ color: PLANET_COLOR[p], fontSize: size }} aria-hidden="true">{PLANET_GLYPH[p]}</span>
 );
 
 // ---------- positions ----------
 export function PositionsPanel({ chart }: { chart: ChartData }) {
   return (
     <Panel title="Positions">
-      <table className="w-full border-collapse">
+      <table className="tbl-ledger">
         <thead>
           <tr>
-            <th className={th}></th><th className={th}>Planet</th>
-            <th className={th}>Longitude</th><th className={th}>Hse</th><th className={th}>Speed</th>
+            <th scope="col"></th>
+            <th scope="col">Planet</th>
+            <th scope="col">Longitude</th>
+            <th scope="col">Hse</th>
+            <th scope="col">Speed</th>
           </tr>
         </thead>
         <tbody>
           {chart.bodies.map((b) => (
             <tr key={b.key}>
-              <td className={`${td} text-center`}><Glyph p={b.key} /></td>
-              <td className={td}>{PLANET_LABEL[b.key]}{b.retro && <span className="text-red-700"> ℞</span>}</td>
-              <td className={`${td} text-center whitespace-nowrap`}>
-                {pad(b.deg)}° <span style={{ color: SIGN_COLOR[b.sign] }}>{SIGN_GLYPH[b.sign]}</span> {pad(b.min)}'
+              <td className="text-center"><Glyph p={b.key} /></td>
+              <td className="font-bold">{PLANET_LABEL[b.key]}{b.retro && <span className="text-seal"> ℞</span>}</td>
+              <td className="text-center whitespace-nowrap">
+                {pad(b.deg)}° <span style={{ color: SIGN_COLOR[b.sign] }} aria-hidden="true">{SIGN_GLYPH[b.sign]}</span> <span className="sr-only">{SIGN_LABEL[b.sign]}</span> {pad(b.min)}'
               </td>
-              <td className={`${td} text-center`}>{b.house}</td>
-              <td className={`${td} text-right`}>{b.speed >= 0 ? "+" : ""}{b.speed.toFixed(2)}°</td>
+              <td className="text-center">{b.house}</td>
+              <td className="text-right">{b.speed >= 0 ? "+" : ""}{b.speed.toFixed(2)}°</td>
             </tr>
           ))}
         </tbody>
@@ -62,33 +64,33 @@ export function DignitiesPanel({ chart }: { chart: ChartData }) {
   const head = ["", "Ruler", "Exalt", "Trip", "Term", "Face", "Detn", "Fall", "Score"];
   return (
     <Panel title="Essential Dignities" right={<span className="text-[10px] italic">{chart.sect} chart</span>}>
-      <table className="w-full border-collapse table-fixed">
+      <table className="tbl-ledger table-fixed">
         <thead>
-          <tr>{head.map((h) => <th key={h} className={`${th} !px-0.5 !text-[11px]`}>{h}</th>)}</tr>
+          <tr>{head.map((h) => <th key={h} scope="col" className="!px-0.5 !text-[11px]">{h}</th>)}</tr>
         </thead>
         <tbody>
           {chart.dignities.map((r) => {
             const mark = (on: boolean, p?: PlanetKey) =>
-              on ? <Glyph p={r.planet} /> : p ? <Glyph p={p} /> : <span className="text-neutral-400">--</span>;
+              on ? <Glyph p={r.planet} /> : p ? <Glyph p={p} /> : <span className="text-ink-soft/60">--</span>;
             return (
               <tr key={r.planet}>
-                <td className={`${td} !px-0.5 !text-[12px] text-center`}><Glyph p={r.planet} /></td>
-                <td className={`${td} !px-0.5 !text-[12px] text-center`}>{r.ruler ? <Glyph p={r.planet} /> : <span className="text-neutral-400">--</span>}</td>
-                <td className={`${td} !px-0.5 !text-[12px] text-center`}>{r.exalt ? <Glyph p={r.planet} /> : <span className="text-neutral-400">--</span>}</td>
-                <td className={`${td} !px-0.5 !text-[12px] text-center whitespace-nowrap`}>
+                <td className="!px-0.5 !text-[12px] text-center"><Glyph p={r.planet} /></td>
+                <td className="!px-0.5 !text-[12px] text-center">{r.ruler ? <Glyph p={r.planet} /> : <span className="text-ink-soft/60">--</span>}</td>
+                <td className="!px-0.5 !text-[12px] text-center">{r.exalt ? <Glyph p={r.planet} /> : <span className="text-ink-soft/60">--</span>}</td>
+                <td className="!px-0.5 !text-[12px] text-center whitespace-nowrap">
                   {r.trip.map((p, i) => (
                     <span key={i} style={{ opacity: (chart.sect === "day") === (i === 0) ? 1 : 0.35 }}>
                       <Glyph p={p} />
                     </span>
                   ))}
                 </td>
-                <td className={`${td} !px-0.5 !text-[12px] text-center`}>{mark(r.term === r.planet, r.term)}</td>
-                <td className={`${td} !px-0.5 !text-[12px] text-center`}>{mark(r.face === r.planet, r.face)}</td>
-                <td className={`${td} !px-0.5 !text-[12px] text-center`}>{r.detriment ? <Glyph p={r.planet} /> : <span className="text-neutral-400">--</span>}</td>
-                <td className={`${td} !px-0.5 !text-[12px] text-center`}>{r.fall ? <Glyph p={r.planet} /> : <span className="text-neutral-400">--</span>}</td>
-                <td className={`${td} !px-0.5 !text-[12px] text-right font-bold`}>
+                <td className="!px-0.5 !text-[12px] text-center">{mark(r.term === r.planet, r.term)}</td>
+                <td className="!px-0.5 !text-[12px] text-center">{mark(r.face === r.planet, r.face)}</td>
+                <td className="!px-0.5 !text-[12px] text-center">{r.detriment ? <Glyph p={r.planet} /> : <span className="text-ink-soft/60">--</span>}</td>
+                <td className="!px-0.5 !text-[12px] text-center">{r.fall ? <Glyph p={r.planet} /> : <span className="text-ink-soft/60">--</span>}</td>
+                <td className="!px-0.5 !text-[12px] text-right font-bold">
                   {r.score > 0 ? `+${r.score}` : r.score}
-                  {r.peregrine && <span title="Peregrine" className="text-red-700"> p</span>}
+                  {r.peregrine && <span title="Peregrine" className="text-seal"> p</span>}
                 </td>
               </tr>
             );
@@ -106,15 +108,24 @@ export function MoonAspectsPanel({ chart }: { chart: ChartData }) {
       {chart.moonAspects.length === 0 ? (
         <p className="text-[12px] italic px-1 py-1">No major aspects</p>
       ) : (
-        <table className="w-full border-collapse">
+        <table className="tbl-ledger">
+          <thead>
+            <tr>
+              <th scope="col">Moon</th>
+              <th scope="col">Aspect</th>
+              <th scope="col">Planet</th>
+              <th scope="col">Orb</th>
+              <th scope="col">State</th>
+            </tr>
+          </thead>
           <tbody>
             {chart.moonAspects.map((a, i) => (
               <tr key={i}>
-                <td className={`${td} text-center`}><Glyph p="moon" /></td>
-                <td className={`${td} text-center`}>{ASPECT_GLYPH[a.aspectKey] ?? a.aspectKey}</td>
-                <td className={`${td} text-center`}><Glyph p={a.other} /> <span className="text-[11px]">{PLANET_LABEL[a.other]}</span></td>
-                <td className={`${td} text-right`}>{a.orb.toFixed(2)}°</td>
-                <td className={`${td} text-center text-[11px]`}>{a.applying ? "appl" : "sep"}</td>
+                <td><Glyph p="moon" /></td>
+                <td className="text-center"><span aria-hidden="true">{ASPECT_GLYPH[a.aspectKey] ?? a.aspectKey}</span><span className="sr-only"> {a.aspectKey}</span></td>
+                <td><Glyph p={a.other} /> <span className="text-[11px]">{PLANET_LABEL[a.other]}</span></td>
+                <td className="text-right">{a.orb.toFixed(2)}°</td>
+                <td className="text-center text-[11px]">{a.applying ? "applying" : "separating"}</td>
               </tr>
             ))}
           </tbody>
@@ -125,17 +136,12 @@ export function MoonAspectsPanel({ chart }: { chart: ChartData }) {
 }
 
 // ---------- half-grid aspectarian ----------
-const ASPECT_STYLE: Record<string, string> = {
-  conjunction: "#b9770e", sextile: "#1e8449", trine: "#2471a3",
-  square: "#c0392b", opposition: "#c0392b",
-};
-
 export function AspectGridPanel({ chart }: { chart: ChartData }) {
   const cell = (p1: PlanetKey, p2: PlanetKey) =>
     chart.aspectsGrid.find(
       (a) => (a.p1 === p1 && a.p2 === p2) || (a.p1 === p2 && a.p2 === p1)
     );
-  const gth = "border border-neutral-500 text-center font-bold bg-[#efeedd]";
+  const gth = "border border-line text-center font-bold bg-parchment-deep";
   return (
     <Panel title="Aspectarian">
       <table className="border-collapse mx-auto">
@@ -143,8 +149,9 @@ export function AspectGridPanel({ chart }: { chart: ChartData }) {
           <tr>
             <th className={gth}></th>
             {PLANETS.slice(0, -1).map((p) => (
-              <th key={p} className={gth} style={{ color: PLANET_COLOR[p], fontSize: 17, width: 30 }}>
-                {PLANET_GLYPH[p]}
+              <th key={p} scope="col" className={gth} style={{ color: PLANET_COLOR[p], fontSize: 17, width: 30 }}>
+                <span aria-hidden="true">{PLANET_GLYPH[p]}</span>
+                <span className="sr-only">{PLANET_LABEL[p]}</span>
               </th>
             ))}
           </tr>
@@ -152,23 +159,24 @@ export function AspectGridPanel({ chart }: { chart: ChartData }) {
         <tbody>
           {PLANETS.slice(1).map((row, ri) => (
             <tr key={row}>
-              <th className={gth} style={{ color: PLANET_COLOR[row], fontSize: 17 }}>
-                {PLANET_GLYPH[row]}
+              <th scope="row" className={gth} style={{ color: PLANET_COLOR[row], fontSize: 17 }}>
+                <span aria-hidden="true">{PLANET_GLYPH[row]}</span>
+                <span className="sr-only">{PLANET_LABEL[row]}</span>
               </th>
               {PLANETS.slice(0, -1).map((col, ci) => {
-                if (ci > ri) return <td key={col} className="border border-neutral-300 bg-[#f6f5e8]"></td>;
+                if (ci > ri) return <td key={col} className="border border-line/50 bg-parchment/60"></td>;
                 const a = cell(row, col);
-                if (!a) return <td key={col} className="border border-neutral-400"></td>;
+                if (!a) return <td key={col} className="border border-line"></td>;
                 return (
                   <td
                     key={col}
-                    className="border border-neutral-500 text-center leading-tight"
-                    title={`${PLANET_LABEL[a.p1]} ${a.aspectKey} ${PLANET_LABEL[a.p2]} — orb ${a.orb.toFixed(1)}° ${a.applying ? "applying" : "separating"}`}
+                    className="border border-line text-center leading-tight"
+                    aria-label={`${PLANET_LABEL[a.p1]} ${a.aspectKey} ${PLANET_LABEL[a.p2]}, orb ${a.orb.toFixed(1)} degrees, ${a.applying ? "applying" : "separating"}`}
                   >
-                    <span style={{ color: ASPECT_STYLE[a.aspectKey], fontSize: 16, fontWeight: 700 }}>
+                    <span style={{ color: ASPECT_COLOR[a.aspectKey], fontSize: 16, fontWeight: 700 }} aria-hidden="true">
                       {ASPECT_GLYPH[a.aspectKey]}
                     </span>
-                    <span className="block text-[9px] text-neutral-600 -mt-0.5">
+                    <span className="block text-[9px] text-ink-soft -mt-0.5" aria-hidden="true">
                       {a.orb.toFixed(1)}°{a.applying ? "a" : "s"}
                     </span>
                   </td>
@@ -224,7 +232,7 @@ export function PlanetaryHoursPanel({ chart, now }: { chart: ChartData; now: Dat
           <span
             key={h.index}
             title={`${h.isDay ? "Day" : "Night"} hour ${h.index}: ${fmtTimeTz(h.start, chart.tzName)} – ${fmtTimeTz(h.end, chart.tzName)}`}
-            className={`text-[13px] px-0.5 rounded ${curHour?.index === h.index ? "bg-yellow-200 outline outline-1 outline-neutral-600" : ""} ${!h.isDay ? "opacity-60" : ""}`}
+            className={`text-[13px] px-0.5 rounded ${curHour?.index === h.index ? "bg-brass/25 outline outline-1 outline-line" : ""} ${!h.isDay ? "opacity-60" : ""}`}
           >
             <Glyph p={h.ruler} />
           </span>
@@ -257,20 +265,20 @@ export function ElectionPanel({
   const inMs = best.date.getTime() - now.getTime();
   return (
     <Panel title="Day Trading Election" right={<span className="text-[10px] italic">next 72h · session 6a–3p UTC-5</span>}>
-      <div className="px-1.5 py-1.5 border border-neutral-500 bg-yellow-100 mb-1">
-        <div className="text-[11px] uppercase tracking-wide text-neutral-600">Strongest entry window</div>
+      <div className="px-1.5 py-1.5 border border-brass bg-brass/10 mb-1">
+        <div className="text-[11px] uppercase tracking-wide text-ink-soft">Strongest entry window</div>
         <div className="text-[16px] font-bold leading-tight">{fmtD(best.date)}</div>
         <div className="flex items-baseline justify-between">
           <span className="text-[13px] font-bold">
             Score {best.score > 0 ? `+${best.score}` : best.score}
           </span>
           <span className="text-[12px]">
-            {inMs > 0 ? <>in {fmtDur(inMs)}</> : <span className="font-bold text-green-800">now</span>}
+            {inMs > 0 ? <>in {fmtDur(inMs)}</> : <span className="font-bold text-spruce">now</span>}
           </span>
         </div>
         <div className="text-[12px] mt-0.5">
           {best.voc ? (
-            <span className="text-red-800">☽ void of course</span>
+            <span className="text-seal">☽ void of course</span>
           ) : best.moonAspect ? (
             <>
               ☽ {ANGLE_GLYPH[best.moonAspect.angle]}{" "}
@@ -285,7 +293,7 @@ export function ElectionPanel({
           {best.factors.slice(0, 8).map((f, i) => (
             <tr key={i}>
               <td className={`${td} !text-[12px]`}>{f.label}</td>
-              <td className={`${td} !text-[12px] text-right font-bold ${f.pts > 0 ? "text-green-800" : "text-red-800"}`}>
+              <td className={`${td} !text-[12px] text-right font-bold ${f.pts > 0 ? "text-spruce" : "text-seal"}`}>
                 {f.pts > 0 ? `+${f.pts}` : f.pts}
               </td>
             </tr>
@@ -293,7 +301,7 @@ export function ElectionPanel({
         </tbody>
       </table>
       {alternates.length > 0 && (
-        <div className="px-1.5 pb-1 text-[11px] text-neutral-700">
+        <div className="px-1.5 pb-1 text-[11px] text-ink-soft">
           <span className="font-bold">Also strong: </span>
           {alternates.map((a, i) => (
             <span key={i}>
@@ -304,14 +312,14 @@ export function ElectionPanel({
         </div>
       )}
       {blocked.length > 0 && (
-        <div className="border border-red-800 bg-red-100 mx-1 mb-1 px-1.5 py-1">
-          <div className="text-[11px] font-bold uppercase tracking-wide text-red-900">
+        <div className="border border-seal bg-seal/10 mx-1 mb-1 px-1.5 py-1">
+          <div className="text-[11px] font-bold uppercase tracking-wide text-seal-deep">
             ⛔ Do not trade — session blocks
           </div>
           {blocked.map((b, i) => {
             const active = b.start.getTime() <= now.getTime() && now.getTime() <= b.end.getTime();
             return (
-              <div key={i} className={`text-[11px] leading-snug ${active ? "font-bold text-red-900" : "text-red-800"}`}>
+              <div key={i} className={`text-[11px] leading-snug ${active ? "font-bold text-seal-deep" : "text-seal"}`}>
                 {fmtD(b.start)} – {fmtT(b.end)}
                 {active && " (now)"}
                 <span className="block pl-3 text-[10px] font-normal">{b.reasons.join(" · ")}</span>
@@ -320,7 +328,7 @@ export function ElectionPanel({
           })}
         </div>
       )}
-      <div className="px-1.5 pb-0.5 text-[10px] italic text-neutral-500">
+      <div className="px-1.5 pb-0.5 text-[10px] italic text-ink-soft">
         Traditional electional astrology — not financial advice.
       </div>
     </Panel>
@@ -357,15 +365,15 @@ export function MoonPanel({ chart, now }: { chart: ChartData; now: Date }) {
           </tr>
         </tbody>
       </table>
-      <table className="w-full border-collapse">
-        <thead>
-          <tr><th className={th} colSpan={2}>Nearest lunar phases</th></tr>
-        </thead>
+      <table className="tbl-ledger">
+        <caption className="text-left text-[11px] uppercase tracking-wide text-ink-soft font-bold py-1">
+          Nearest lunar phases
+        </caption>
         <tbody>
           {[...past, ...future].map((p, i) => (
-            <tr key={i} className={p.date <= now ? "text-neutral-500" : ""}>
-              <td className={td}>{phaseGlyph(p.target)} {p.label}</td>
-              <td className={`${td} text-right`}>{fmtD(p.date)}</td>
+            <tr key={i} className={p.date <= now ? "text-ink-soft" : ""}>
+              <td>{phaseGlyph(p.target)} {p.label}</td>
+              <td className="text-right">{fmtD(p.date)}</td>
             </tr>
           ))}
         </tbody>

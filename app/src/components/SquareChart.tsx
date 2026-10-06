@@ -11,6 +11,14 @@ interface Pt { x: number; y: number }
 const P = (x: number, y: number): Pt => ({ x, y });
 const lerp = (a: Pt, b: Pt, t: number): Pt => P(a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t);
 
+// token-driven chrome colours (SVG needs them via style, not attributes)
+const INK = "hsl(var(--ink))";
+const INK_SOFT = "hsl(var(--ink-soft))";
+const LINE_C = "hsl(var(--line))";
+const CARD = "hsl(var(--card))";
+const PARCH = "hsl(var(--parchment))";
+const SEAL = "hsl(var(--seal))";
+
 // ---- layout constants (viewBox 1000x1000) ----
 const O = 40;            // outer margin
 const S = 920;           // outer side
@@ -57,9 +65,6 @@ const HOUSE_NUMBER_POS: Record<number, { pos: Pt; anchor: "start" | "middle" | "
   12: { pos: P(I - 16, I - 8), anchor: "end" },
 };
 
-const CHART_BG = "#fbfadf";
-const LINE = "#8a8a7a";
-
 function housePoint(house: number, f: number, depth: number): Pt {
   const [Os, Is] = CUSP_LINES[house];
   const [Oe, Ie] = CUSP_LINES[(house % 12) + 1];
@@ -69,9 +74,10 @@ function housePoint(house: number, f: number, depth: number): Pt {
 interface Props {
   chart: ChartData;
   showOuters: boolean;
+  centralTitle?: string;
 }
 
-export function SquareChart({ chart, showOuters }: Props) {
+export function SquareChart({ chart, showOuters, centralTitle = "Live Chart" }: Props) {
   const lines: Array<[Pt, Pt]> = [
     // outer square
     [CORNER_TL, CORNER_TR], [CORNER_TR, CORNER_BR], [CORNER_BR, CORNER_BL], [CORNER_BL, CORNER_TL],
@@ -121,28 +127,34 @@ export function SquareChart({ chart, showOuters }: Props) {
     const signKey = (Object.keys(SIGN_GLYPH) as Array<keyof typeof SIGN_GLYPH>)[signIdx];
     return (
       <text key={`cusp-${k}`} x={pos.x} y={pos.y} textAnchor="middle" fontSize="17"
-        fill="#333" style={{ paintOrder: "stroke", stroke: CHART_BG, strokeWidth: 5 }}>
+        style={{ fill: INK, paintOrder: "stroke", stroke: CARD, strokeWidth: 5 }}>
         {pad(deg)}°<tspan fill={SIGN_COLOR[signKey]} fontSize="18">{SIGN_GLYPH[signKey]}</tspan>{pad(min)}'
       </text>
     );
   };
 
+  const moon = chart.bodies.find((b) => b.key === "moon");
+  const ariaLabel =
+    `Astrological chart wheel. ${centralTitle}. Ascendant ${fmtLon(chart.asc)}, ` +
+    `Midheaven ${fmtLon(chart.mc)}` +
+    (moon ? `, Moon at ${fmtLon(moon.lon)}` : "") + ".";
+
   return (
-    <svg viewBox="-25 -25 1050 1050" className="w-full h-full" role="img" aria-label="Astrological chart wheel">
-      <rect x={O} y={O} width={S} height={S} fill={CHART_BG} stroke={LINE} strokeWidth={2} />
+    <svg viewBox="-25 -25 1050 1050" className="w-full h-full" role="img" aria-label={ariaLabel}>
+      <rect x={O} y={O} width={S} height={S} style={{ fill: CARD, stroke: LINE_C, strokeWidth: 2 }} />
       {lines.map(([a, b], i) => (
-        <line key={i} x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke={LINE} strokeWidth={1.2} />
+        <line key={i} x1={a.x} y1={a.y} x2={b.x} y2={b.y} style={{ stroke: LINE_C, strokeWidth: 1.2 }} />
       ))}
 
       {/* angle labels outside the square */}
-      <text x={O - 10} y={C + 6} textAnchor="end" fontSize="20" fontWeight="bold" fill="#333">Asc</text>
-      <text x={O + S + 10} y={C + 6} textAnchor="start" fontSize="20" fontWeight="bold" fill="#333">Dsc</text>
-      <text x={C} y={O - 12} textAnchor="middle" fontSize="20" fontWeight="bold" fill="#333">MC</text>
-      <text x={C} y={O + S + 26} textAnchor="middle" fontSize="20" fontWeight="bold" fill="#333">IC</text>
+      <text x={O - 10} y={C + 6} textAnchor="end" fontSize="20" fontWeight="bold" style={{ fill: INK }}>Asc</text>
+      <text x={O + S + 10} y={C + 6} textAnchor="start" fontSize="20" fontWeight="bold" style={{ fill: INK }}>Dsc</text>
+      <text x={C} y={O - 12} textAnchor="middle" fontSize="20" fontWeight="bold" style={{ fill: INK }}>MC</text>
+      <text x={C} y={O + S + 26} textAnchor="middle" fontSize="20" fontWeight="bold" style={{ fill: INK }}>IC</text>
 
       {/* house numbers */}
       {Object.entries(HOUSE_NUMBER_POS).map(([h, v]) => (
-        <text key={`hn-${h}`} x={v.pos.x} y={v.pos.y} textAnchor={v.anchor} fontSize="17" fill="#555">
+        <text key={`hn-${h}`} x={v.pos.x} y={v.pos.y} textAnchor={v.anchor} fontSize="17" style={{ fill: INK_SOFT }}>
           {h}
         </text>
       ))}
@@ -154,38 +166,38 @@ export function SquareChart({ chart, showOuters }: Props) {
       {planetEls.map(({ b, pt }) => (
         <g key={b.key}>
           <text x={pt.x} y={pt.y - 22} textAnchor="middle" fontSize="44" fill={PLANET_COLOR[b.key]}
-            style={{ paintOrder: "stroke", stroke: CHART_BG, strokeWidth: 6 }}>
+            style={{ paintOrder: "stroke", stroke: CARD, strokeWidth: 6 }}>
             {PLANET_GLYPH[b.key]}
           </text>
           <text x={pt.x} y={pt.y + 8} textAnchor="middle" fontSize="18"
-            style={{ paintOrder: "stroke", stroke: CHART_BG, strokeWidth: 5 }}>
-            <tspan fill="#333">{pad(b.deg)}° </tspan>
+            style={{ paintOrder: "stroke", stroke: CARD, strokeWidth: 5 }}>
+            <tspan style={{ fill: INK }}>{pad(b.deg)}° </tspan>
             <tspan fill={SIGN_COLOR[b.sign]} fontSize="20">{SIGN_GLYPH[b.sign]}</tspan>
-            <tspan fill="#333"> {pad(b.min)}'</tspan>
-            {b.retro && <tspan fill="#c0392b" fontSize="16"> ℞</tspan>}
+            <tspan style={{ fill: INK }}> {pad(b.min)}'</tspan>
+            {b.retro && <tspan style={{ fill: SEAL }} fontSize="16"> ℞</tspan>}
           </text>
         </g>
       ))}
 
       {/* center info panel */}
       <g>
-        <rect x={I + 14} y={I + 14} width={IR - I - 28} height={266} fill="#fdfdf2" stroke="#555" strokeWidth={1.2} />
-        <text x={C} y={I + 46} textAnchor="middle" fontSize="21" fontWeight="bold" fill="#222">Live Chart</text>
-        <text x={C} y={I + 72} textAnchor="middle" fontSize="17" fill="#222">
+        <rect x={I + 14} y={I + 14} width={IR - I - 28} height={266} style={{ fill: PARCH, stroke: INK_SOFT, strokeWidth: 1.2 }} />
+        <text x={C} y={I + 46} textAnchor="middle" fontSize="21" fontWeight="bold" style={{ fill: INK }}>{centralTitle}</text>
+        <text x={C} y={I + 72} textAnchor="middle" fontSize="17" style={{ fill: INK }}>
           {chart.wallDateStr}
         </text>
-        <text x={C} y={I + 106} textAnchor="middle" fontSize="30" fontWeight="bold" fill="#111" fontFamily="monospace">
+        <text x={C} y={I + 106} textAnchor="middle" fontSize="30" fontWeight="bold" style={{ fill: INK }} fontFamily="monospace">
           {chart.wallClock}
         </text>
-        <text x={C} y={I + 132} textAnchor="middle" fontSize="15" fill="#333">
+        <text x={C} y={I + 132} textAnchor="middle" fontSize="15" style={{ fill: INK_SOFT }}>
           {`${chart.tzLabel}  ·  ${Math.abs(chart.lat).toFixed(2)}°${chart.lat >= 0 ? "N" : "S"} ${Math.abs(chart.lng).toFixed(2)}°${chart.lng >= 0 ? "E" : "W"}`}
         </text>
-        <text x={C} y={I + 160} textAnchor="middle" fontSize="15" fontStyle="italic" fill="#333">Geocentric · Tropical</text>
-        <text x={C} y={I + 182} textAnchor="middle" fontSize="15" fontStyle="italic" fill="#333">Regiomontanus</text>
-        <text x={C} y={I + 218} textAnchor="middle" fontSize="18" fill="#111">
+        <text x={C} y={I + 160} textAnchor="middle" fontSize="15" fontStyle="italic" style={{ fill: INK_SOFT }}>Geocentric · Tropical</text>
+        <text x={C} y={I + 182} textAnchor="middle" fontSize="15" fontStyle="italic" style={{ fill: INK_SOFT }}>Regiomontanus</text>
+        <text x={C} y={I + 218} textAnchor="middle" fontSize="18" style={{ fill: INK }}>
           {`ASC ${fmtLon(chart.asc)}   MC ${fmtLon(chart.mc)}`}
         </text>
-        <text x={C} y={I + 246} textAnchor="middle" fontSize="15" fill="#444">
+        <text x={C} y={I + 246} textAnchor="middle" fontSize="15" style={{ fill: INK_SOFT }}>
           {chart.sect === "day" ? "Day chart" : "Night chart"}
         </text>
       </g>
