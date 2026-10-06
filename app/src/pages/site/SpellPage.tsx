@@ -80,67 +80,67 @@ export default function SpellPage({ kind }: { kind: keyof typeof ART }) {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-1" style={{ fontVariant: "small-caps" }}>{a.title}</h1>
-      <p className="text-[14px] text-[#4a351f] max-w-3xl mb-4">
+      <h1 className="text-3xl font-bold mb-1 font-smallcaps">{a.title}</h1>
+      <p className="text-[14px] text-ink-soft max-w-3xl mb-4">
         A working of {a.planet} {a.glyph}, kept in the old manner: the fit day is <b>{a.day}</b>,
         the fit hours are those of {a.planet} — strongest of all when the hour of {a.planet} falls
         on {a.day} itself. The Moon should be waxing and free of combustion.
       </p>
 
       <div className="grid md:grid-cols-2 gap-6">
-        <div className="border-2 border-[#5a3d1e] bg-[#f7f0da] p-4">
-          <h2 className="font-bold mb-2" style={{ fontVariant: "small-caps" }}>The rite</h2>
-          <ul className="text-[13px] space-y-1 mb-3">
-            <li><b>Candle:</b> {a.candle}</li>
-            <li><b>Incense:</b> {a.incense}</li>
-            <li><b>Moon:</b> waxing, ideally in {a.signs}</li>
-          </ul>
+        <section aria-labelledby="rite-h" className="border-2 border-line bg-card p-4">
+          <h2 id="rite-h" className="font-bold mb-2 font-smallcaps">The rite</h2>
+          <dl className="text-[13px] space-y-1 mb-3">
+            <div><dt className="inline font-bold">Candle:</dt> <dd className="inline">{a.candle}</dd></div>
+            <div><dt className="inline font-bold">Incense:</dt> <dd className="inline">{a.incense}</dd></div>
+            <div><dt className="inline font-bold">Moon:</dt> <dd className="inline">waxing, ideally in {a.signs}</dd></div>
+          </dl>
           <ol className="list-decimal ml-5 space-y-1 text-[13px]">
             {a.rite.map((s, i) => <li key={i}>{s}</li>)}
           </ol>
-          <p className="text-[12px] italic text-[#7a1f1f] mt-3">{a.caution}</p>
-          <h3 className="font-bold mt-4 mb-1" style={{ fontVariant: "small-caps" }}>Runes for the working</h3>
+          <p className="text-[12px] italic text-seal mt-3">{a.caution}</p>
+          <h3 className="font-bold mt-4 mb-1 font-smallcaps">Runes for the working</h3>
           <ul className="text-[13px] space-y-0.5">
             {a.runes.map((r, i) => <li key={i}>{r}</li>)}
           </ul>
-        </div>
+        </section>
 
-        <div className="border-2 border-[#5a3d1e] bg-[#f7f0da] p-4">
-          <h2 className="font-bold mb-2" style={{ fontVariant: "small-caps" }}>Next fit hours — live</h2>
+        <section aria-labelledby="hours-h" className="border-2 border-line bg-card p-4">
+          <h2 id="hours-h" className="font-bold mb-2 font-smallcaps">Next fit hours — live</h2>
           <div className="flex flex-wrap items-end gap-3 mb-3">
             <label className="flex flex-col gap-1 text-[12px]">
-              <span className="font-bold" style={{ fontVariant: "small-caps" }}>Latitude</span>
-              <input value={lat} onChange={(e) => setLat(e.target.value)} className="w-24 border border-[#5a3d1e] bg-white px-2 py-1" />
+              <span className="font-bold font-smallcaps">Latitude</span>
+              <input value={lat} onChange={(e) => setLat(e.target.value)} className="w-24 border border-line bg-card px-2 py-1" />
             </label>
             <label className="flex flex-col gap-1 text-[12px]">
-              <span className="font-bold" style={{ fontVariant: "small-caps" }}>Longitude</span>
-              <input value={lng} onChange={(e) => setLng(e.target.value)} className="w-24 border border-[#5a3d1e] bg-white px-2 py-1" />
+              <span className="font-bold font-smallcaps">Longitude</span>
+              <input value={lng} onChange={(e) => setLng(e.target.value)} className="w-24 border border-line bg-card px-2 py-1" />
             </label>
-            <span className="text-[11px] text-[#6b5537] italic pb-1">({tzOffsetLabel(now, tz)})</span>
+            <span className="text-[11px] text-ink-soft italic pb-1">({tzOffsetLabel(now, tz)})</span>
           </div>
-          {!valid && <p className="text-[#7a1f1f] font-bold text-[13px]">Enter a valid latitude and longitude.</p>}
+          {!valid && <p className="text-seal font-bold text-[13px]">Enter a valid latitude and longitude.</p>}
           <ul className="text-[13px]">
             {hours.map((h, i) => (
-              <li key={i} className={`flex justify-between items-baseline border-b border-[#e5d9b8] py-1 ${h.dayRulerMatches ? "font-bold" : ""}`}>
+              <li key={i} className={`flex justify-between items-baseline border-b border-line py-1 ${h.dayRulerMatches ? "font-bold" : ""}`}>
                 <span>
                   {new Intl.DateTimeFormat("en-US", { timeZone: tz, weekday: "short", month: "short", day: "numeric" }).format(h.start)}
-                  {h.dayRulerMatches && <span className="text-[#7a1f1f]"> ★</span>}
+                  {h.dayRulerMatches && <span className="text-seal"> ★</span>}
                   {h.dayRulerMatches && WEEKDAYS[h.weekdayIdx] !== new Intl.DateTimeFormat("en-US", { timeZone: tz, weekday: "long" }).format(h.start) && (
-                    <span className="text-[#6b5537] font-normal text-[11px]"> ({WEEKDAYS[h.weekdayIdx]} night)</span>
+                    <span className="text-ink-soft font-normal text-[11px]"> ({WEEKDAYS[h.weekdayIdx]} night)</span>
                   )}
                 </span>
                 <span>{fmtTimeTz(h.start, tz)} → {fmtTimeTz(h.end, tz)}</span>
               </li>
             ))}
           </ul>
-          <p className="text-[11px] text-[#6b5537] italic mt-3">
+          <p className="text-[11px] text-ink-soft italic mt-3">
             ★ marks an hour of {a.planet} within {a.day}'s planetary day (sunrise to sunrise) — the doubly fit time.
           </p>
           <p className="text-[12px] mt-3">
             Bind the working with a <Link to="/sigil" className="underline">sigil</Link> and confirm
             the day with a <Link to="/runes" className="underline">rune cast</Link>.
           </p>
-        </div>
+        </section>
       </div>
     </div>
   );

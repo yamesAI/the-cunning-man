@@ -10,6 +10,11 @@ const TOOLS = [
     tag: "Live",
   },
   {
+    to: "/natal", glyph: "☽", title: "Natal & Transits",
+    blurb: "Cast your natal figure once, then watch the living sky aspect it — exact hits, applying and separating, with testimony from Lilly, Ptolemy and the tradition.",
+    tag: "Live",
+  },
+  {
     to: "/synastry", glyph: "☌", title: "Synastry Meter",
     blurb: "Two birth moments weighed against each other — the old sympathy of Sun, Moon, Venus and Mars, read as one score.",
     tag: "Love",
@@ -55,35 +60,35 @@ export default function SiteHome() {
   return (
     <div>
       {/* hero */}
-      <section className="text-center border-4 border-double border-[#5a3d1e] bg-[#f7f0da] px-6 py-10 mb-8">
-        <p className="text-[13px] tracking-[0.3em] uppercase text-[#7a1f1f] mb-2">Est. in the old tradition</p>
-        <h1 className="text-4xl md:text-5xl font-bold mb-3" style={{ fontVariant: "small-caps" }}>
+      <section className="text-center border-4 border-double border-line bg-card px-6 py-10 mb-8">
+        <p className="text-[13px] tracking-[0.3em] uppercase text-seal mb-2">Est. in the old tradition</p>
+        <h1 className="text-4xl md:text-5xl font-bold mb-3 font-smallcaps">
           The Cunning Man
         </h1>
-        <p className="max-w-2xl mx-auto text-[15px] leading-relaxed text-[#4a351f]">
+        <p className="max-w-2xl mx-auto text-[15px] leading-relaxed text-ink-soft">
           In every village there was one who kept the old arts — reading the stars, casting the runes,
           and knowing the hour to act. These are those arts, made free for all: Renaissance astrology,
           chaos magic, and the Elder Futhark, computed live and honest.
         </p>
-        <p className="mt-4 text-[13px] italic text-[#6b5537]">No coin asked. No account. No gate.</p>
+        <p className="mt-4 text-[13px] italic text-ink-soft">No coin asked. No account. No gate.</p>
       </section>
 
       {/* tools grid */}
       <section aria-label="Free tools">
-        <h2 className="text-xl font-bold mb-3" style={{ fontVariant: "small-caps" }}>The Free Arts</h2>
+        <h2 className="text-xl font-bold mb-3 font-smallcaps">The Free Arts</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {TOOLS.map((t) => (
             <Link
               key={t.to}
               to={t.to}
-              className="border-2 border-[#5a3d1e] bg-[#f7f0da] p-4 hover:bg-[#efe3c0] hover:shadow-md transition-shadow flex flex-col"
+              className="border-2 border-line bg-card p-4 hover:bg-parchment-deep hover:shadow-md transition-shadow flex flex-col"
             >
               <div className="flex items-baseline justify-between">
                 <span className="text-3xl">{t.glyph}</span>
-                <span className="text-[10px] uppercase tracking-widest bg-[#7a1f1f] text-[#f5eeda] px-1.5 py-0.5">{t.tag}</span>
+                <span className="text-[10px] uppercase tracking-widest bg-seal text-card px-1.5 py-0.5">{t.tag}</span>
               </div>
-              <h3 className="text-lg font-bold mt-2" style={{ fontVariant: "small-caps" }}>{t.title}</h3>
-              <p className="text-[13px] leading-snug mt-1 text-[#4a351f]">{t.blurb}</p>
+              <h3 className="text-lg font-bold mt-2 font-smallcaps">{t.title}</h3>
+              <p className="text-[13px] leading-snug mt-1 text-ink-soft">{t.blurb}</p>
               <span className="text-[12px] mt-3 underline">Enter →</span>
             </Link>
           ))}
@@ -91,24 +96,24 @@ export default function SiteHome() {
       </section>
 
       {/* traditions */}
-      <section className="grid md:grid-cols-3 gap-4 mt-10">
-        <article className="border border-[#5a3d1e] bg-[#f7f0da] p-4">
-          <h3 className="font-bold" style={{ fontVariant: "small-caps" }}>Renaissance Astrology</h3>
-          <p className="text-[13px] mt-1 text-[#4a351f]">
+      <section aria-label="The traditions" className="grid md:grid-cols-3 gap-4 mt-10">
+        <article className="border border-line bg-card p-4">
+          <h3 className="font-bold font-smallcaps">Renaissance Astrology</h3>
+          <p className="text-[13px] mt-1 text-ink-soft">
             The art of Lilly, Ficino and the masters of the shield chart: essential dignities,
             planetary days and hours, the Moon's applications, and elections for the fit moment.
           </p>
         </article>
-        <article className="border border-[#5a3d1e] bg-[#f7f0da] p-4">
-          <h3 className="font-bold" style={{ fontVariant: "small-caps" }}>Chaos Magic</h3>
-          <p className="text-[13px] mt-1 text-[#4a351f]">
+        <article className="border border-line bg-card p-4">
+          <h3 className="font-bold font-smallcaps">Chaos Magic</h3>
+          <p className="text-[13px] mt-1 text-ink-soft">
             The pragmatic current: belief as a tool, the sigil as the vehicle, gnosis as the key.
             Our engine distils intention into symbol by the classic letter method.
           </p>
         </article>
-        <article className="border border-[#5a3d1e] bg-[#f7f0da] p-4">
-          <h3 className="font-bold" style={{ fontVariant: "small-caps" }}>The Runes</h3>
-          <p className="text-[13px] mt-1 text-[#4a351f]">
+        <article className="border border-line bg-card p-4">
+          <h3 className="font-bold font-smallcaps">The Runes</h3>
+          <p className="text-[13px] mt-1 text-ink-soft">
             The Elder Futhark — twenty-four staves of the North, cast for counsel as they were
             for a thousand years before the printed book.
           </p>
@@ -116,12 +121,12 @@ export default function SiteHome() {
       </section>
 
       {/* press teasers */}
-      <section className="mt-10 border-t-2 border-[#5a3d1e] pt-4">
-        <h2 className="text-lg font-bold mb-2" style={{ fontVariant: "small-caps" }}>From the Press Room</h2>
+      <section className="mt-10 border-t-2 border-line pt-4">
+        <h2 className="text-lg font-bold mb-2 font-smallcaps">From the Press Room</h2>
         <ul className="text-[13px] space-y-1">
           {PRESS_TEASERS.map((p) => (
             <li key={p.to}>
-              <Link to={p.to} className="underline hover:text-[#7a1f1f]">{p.title}</Link>
+              <Link to={p.to} className="underline hover:text-seal">{p.title}</Link>
             </li>
           ))}
         </ul>
