@@ -2,7 +2,7 @@
 
 import { Link, useParams } from "react-router";
 import { PRESS } from "@/site/press";
-import { useMeta } from "@/components/SiteLayout";
+import { useMeta } from "@/hooks/useMeta";
 
 export default function PressRelease() {
   const { slug } = useParams();

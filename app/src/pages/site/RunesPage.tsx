@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { RUNES, drawRunes } from "@/site/runes";
-import { useMeta } from "@/components/SiteLayout";
+import { useMeta } from "@/hooks/useMeta";
 
 const POSITIONS = ["What has been", "What is", "What may come"];
 

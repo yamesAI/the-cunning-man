@@ -6,7 +6,7 @@ import { tzForLocation } from "@/astro/engine";
 import { fmtTimeTz, tzOffsetLabel } from "@/astro/format";
 import { PLANET_GLYPH } from "@/astro/constants";
 import { Link } from "react-router";
-import { useMeta } from "@/components/SiteLayout";
+import { useMeta } from "@/hooks/useMeta";
 
 const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 

@@ -1,7 +1,7 @@
 // Sigil Engine — chaos-magic letter reduction drawn as a monogram of intent.
 
 import { useMemo, useState } from "react";
-import { useMeta } from "@/components/SiteLayout";
+import { useMeta } from "@/hooks/useMeta";
 
 interface SigilData {
   intention: string;

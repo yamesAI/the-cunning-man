@@ -1,7 +1,7 @@
 // The Cunning Man — homepage / directory of free arts.
 
 import { Link } from "react-router";
-import { useMeta } from "@/components/SiteLayout";
+import { useMeta } from "@/hooks/useMeta";
 
 const TOOLS = [
   {

@@ -5,7 +5,7 @@ import { scanElections, aspectName } from "@/astro/election";
 import { tzForLocation } from "@/astro/engine";
 import { fmtTimeTz, tzOffsetLabel } from "@/astro/format";
 import { PLANET_GLYPH, PLANET_LABEL } from "@/astro/constants";
-import { useMeta } from "@/components/SiteLayout";
+import { useMeta } from "@/hooks/useMeta";
 
 function fmtDay(d: Date, tz: string): string {
   return new Intl.DateTimeFormat("en-US", {

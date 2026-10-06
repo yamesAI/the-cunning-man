@@ -1,20 +1,12 @@
-// Site chrome for The Cunning Man: header nav + footer + per-page meta.
+// Site chrome for The Cunning Man: header nav + footer + live sky pill.
 
-import { useEffect, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Link, NavLink, useLocation } from "react-router";
-
-export function useMeta(title: string, description: string) {
-  useEffect(() => {
-    document.title = title;
-    let m = document.querySelector('meta[name="description"]');
-    if (!m) {
-      m = document.createElement("meta");
-      m.setAttribute("name", "description");
-      document.head.appendChild(m);
-    }
-    m.setAttribute("content", description);
-  }, [title, description]);
-}
+import { useSky } from "@/sky/SkyContext";
+import { CITIES } from "@/data/cities";
+import { inIframe } from "@/lib/env";
+import { tzForLocation } from "@/astro/engine";
+import { wallParts, tzOffsetLabel, pad } from "@/astro/format";
 
 const NAV = [
   { to: "/clock", label: "Astro Clock" },
@@ -27,9 +19,55 @@ const NAV = [
   { to: "/press", label: "Press" },
 ];
 
-// Inside a widget iframe the URL path is a resource path we don't control and
-// host chrome already frames the page — render content bare, no site chrome.
-export const inIframe = typeof window !== "undefined" && window.self !== window.top;
+// (inIframe lives in src/lib/env.ts so this file only exports components.)
+
+function SkyPill() {
+  const { now, loc, setLoc, refreshLocation } = useSky();
+  const tz = tzForLocation(loc.lat, loc.lng);
+  const w = wallParts(now, tz);
+  const clock = `${pad(w.hour)}:${pad(w.minute)}:${pad(w.second)}`;
+  const currentCity =
+    CITIES.find((c) => Math.abs(c.lat - loc.lat) < 0.01 && Math.abs(c.lng - loc.lng) < 0.01)?.name ??
+    "";
+  return (
+    <div className="flex items-center gap-2 text-[12px]">
+      <time
+        dateTime={now.toISOString()}
+        aria-label={`Current time at ${loc.name}`}
+        className="font-ui tabular-nums text-[13px]"
+      >
+        {clock} <span className="opacity-70">{tzOffsetLabel(now, tz)}</span>
+      </time>
+      <span aria-hidden="true">·</span>
+      <span className="italic">{loc.name}</span>
+      <select
+        aria-label="Set location by preset city"
+        value={currentCity}
+        onChange={(e) => {
+          const city = CITIES.find((c) => c.name === e.target.value);
+          if (city) setLoc({ ...city, source: "manual" });
+        }}
+        className="border border-[#5a3d1e] bg-white px-1 py-0.5"
+      >
+        <option value="" disabled>
+          City…
+        </option>
+        {CITIES.map((c) => (
+          <option key={c.name} value={c.name}>
+            {c.name}
+          </option>
+        ))}
+      </select>
+      <button
+        onClick={refreshLocation}
+        title="Use my current location"
+        className="border border-[#5a3d1e] bg-white px-1.5 py-0.5 hover:bg-neutral-100"
+      >
+        📍
+      </button>
+    </div>
+  );
+}
 
 export function SiteLayout({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
@@ -43,7 +81,10 @@ export function SiteLayout({ children }: { children: ReactNode }) {
             ⛥ The Cunning Man
           </Link>
           <span className="text-[12px] italic text-[#6b5537]">Free arts of Renaissance astrology · chaos magic · the runes</span>
-          <nav className="flex flex-wrap gap-x-1 gap-y-1 text-[13px] ml-auto">
+          <div className="ml-auto">
+            <SkyPill />
+          </div>
+          <nav aria-label="Site tools" className="flex flex-wrap gap-x-1 gap-y-1 text-[13px] w-full sm:w-auto">
             {NAV.map((n) => (
               <NavLink
                 key={n.to}

@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { computeSynastry, pointLabel } from "@/astro/synastry";
 import { ASPECT_GLYPH } from "@/astro/constants";
-import { useMeta } from "@/components/SiteLayout";
+import { useMeta } from "@/hooks/useMeta";
 
 function Meter({ score }: { score: number }) {
   // semicircular gauge, needle at score 0..100
