@@ -1,30 +1,7 @@
-// Shared live sky state: the ticking instant + the observer's location.
-// Every page consumes this so time and place stay current everywhere.
+// Provider for the shared sky context (geolocation + one-second tick).
 
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  type ReactElement,
-  type ReactNode,
-} from "react";
-
-export interface Loc {
-  lat: number;
-  lng: number;
-  name: string;
-  source: "geo" | "manual";
-}
-
-export const DEFAULT_LOC: Loc = { lat: 51.5074, lng: -0.1278, name: "London", source: "manual" };
-
-export interface Sky {
-  now: Date;
-  loc: Loc;
-  setLoc: (loc: Loc) => void;
-  refreshLocation: () => void;
-}
+import { useEffect, useState, type ReactElement, type ReactNode } from "react";
+import { SkyContext, DEFAULT_LOC, type Loc } from "./sky-context";
 
 const STORAGE_KEY = "cunning-man:location";
 const LEGACY_KEY = "shield-astro-location";
@@ -78,8 +55,6 @@ function loadLoc(): Loc {
   }
   return DEFAULT_LOC;
 }
-
-const SkyContext = createContext<Sky | null>(null);
 
 export function SkyProvider({ children }: { children: ReactNode }): ReactElement {
   const [now, setNow] = useState(() => new Date());
@@ -141,10 +116,4 @@ export function SkyProvider({ children }: { children: ReactNode }): ReactElement
       {children}
     </SkyContext.Provider>
   );
-}
-
-export function useSky(): Sky {
-  const ctx = useContext(SkyContext);
-  if (!ctx) throw new Error("useSky must be used within SkyProvider");
-  return ctx;
 }

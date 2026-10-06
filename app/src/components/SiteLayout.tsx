@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { Link, NavLink, useLocation } from "react-router";
-import { useSky } from "@/sky/SkyContext";
+import { useSky } from "@/sky/sky-context";
 import { CITIES } from "@/data/cities";
 import { inIframe } from "@/lib/env";
 import { tzForLocation } from "@/astro/engine";

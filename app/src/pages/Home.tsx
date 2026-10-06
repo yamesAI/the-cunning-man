@@ -1,10 +1,10 @@
 // Live shield-style astrological clock — traditional Renaissance layout.
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { computeChart, findAscSignChange } from "@/astro/engine";
 import { scanElections } from "@/astro/election";
 import { fmtDur } from "@/astro/format";
-import { useSky } from "@/sky/SkyContext";
+import { useSky } from "@/sky/sky-context";
 import { CITIES } from "@/data/cities";
 import { SquareChart } from "@/components/SquareChart";
 import { ActiveTransitsPanel } from "@/components/ActiveTransitsPanel";
@@ -24,10 +24,17 @@ export default function Home() {
   const secBucket = Math.floor(viewTime.getTime() / 1000);
   const min5Bucket = Math.floor(viewTime.getTime() / (5 * 60000));
 
-  const chart = useMemo(() => computeChart(viewTime, loc.lat, loc.lng), [secBucket, loc.lat, loc.lng]);
+  // memo callbacks close over the buckets only, so memoization is preserved
+  const chart = useMemo(
+    () => computeChart(new Date(secBucket * 1000), loc.lat, loc.lng),
+    [secBucket, loc.lat, loc.lng]
+  );
 
   // election scan over the next 72h — recomputed every 5 minutes
-  const election = useMemo(() => scanElections(viewTime, loc.lat, loc.lng), [min5Bucket, loc.lat, loc.lng]);
+  const election = useMemo(
+    () => scanElections(new Date(min5Bucket * 5 * 60000), loc.lat, loc.lng),
+    [min5Bucket, loc.lat, loc.lng]
+  );
 
   const stepTime = (ms: number) => setOffsetMs((o) => o + ms);
   const stepAsc = (dir: 1 | -1) => {

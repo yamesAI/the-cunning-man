@@ -2,7 +2,7 @@
 // aspect it, in the words of the tradition.
 
 import { useMemo, useState, type ReactElement } from "react";
-import { useSky } from "@/sky/SkyContext";
+import { useSky } from "@/sky/sky-context";
 import { computeChart } from "@/astro/engine";
 import { transitsToNatal, sortTransitHits, type TransitHit } from "@/astro/transits";
 import { ASPECT_GLYPH, PLANET_LABEL, SIGN_GLYPH, SIGN_LABEL } from "@/astro/constants";
