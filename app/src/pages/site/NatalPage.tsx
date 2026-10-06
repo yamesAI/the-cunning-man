@@ -14,6 +14,7 @@ import { hitLine, exactLabel, natalPointLabel } from "@/lib/transitFormat";
 import { SquareChart } from "@/components/SquareChart";
 import { TestimonyCard } from "@/components/TestimonyCard";
 import { useMeta } from "@/hooks/useMeta";
+import { useJsonLd } from "@/hooks/useJsonLd";
 
 function TransitRow({ hit, now }: { hit: TransitHit; now: Date }): ReactElement {
   const testimony = lookupTestimony(hit.transiting, hit.aspectKey);
@@ -44,6 +45,17 @@ export default function NatalPage(): ReactElement {
     "Cast your natal chart by the old art and watch the living sky aspect it: exact transits, applying and separating, with testimony from Lilly, Ptolemy, Bonatti and the tradition."
   );
   const { now, loc } = useSky();
+  useJsonLd("ld-app", {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    name: "The Cunning Man — Natal Chart & Live Transits",
+    url: "https://the-cunning-man-davids-projects-76350782.vercel.app/natal",
+    applicationCategory: "LifestyleApplication",
+    operatingSystem: "Any (web browser)",
+    offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+    description:
+      "Cast your natal chart by the traditional art and watch the living sky aspect it: exact transits, applying and separating, with testimony from Lilly, Ptolemy and the tradition. Free; the figure stays in your browser.",
+  });
   const [profile, setProfile] = useState<NatalProfile | null>(() => loadNatal());
   const [editing, setEditing] = useState(false);
 

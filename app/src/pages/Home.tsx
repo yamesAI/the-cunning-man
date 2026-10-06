@@ -5,6 +5,7 @@ import { computeChart, findAscSignChange } from "@/astro/engine";
 import { scanElections } from "@/astro/election";
 import { fmtDur } from "@/astro/format";
 import { useSky } from "@/sky/sky-context";
+import { useJsonLd } from "@/hooks/useJsonLd";
 import { CITIES } from "@/data/cities";
 import { SquareChart } from "@/components/SquareChart";
 import { useTilt } from "@/hooks/useTilt";
@@ -14,6 +15,17 @@ import {
 } from "@/components/panels";
 
 export default function Home() {
+  useJsonLd("ld-app", {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    name: "The Cunning Man — Shield Astrological Clock",
+    url: "https://the-cunning-man-davids-projects-76350782.vercel.app/clock",
+    applicationCategory: "LifestyleApplication",
+    operatingSystem: "Any (web browser)",
+    offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+    description:
+      "A living Renaissance shield chart: Ascendant, houses, essential dignities, planetary hours, Moon, live aspects and active transits, recomputed every second for your horizon. Free.",
+  });
   const { now, loc, setLoc, refreshLocation } = useSky();
   const [offsetMs, setOffsetMs] = useState(0);
   const [latText, setLatText] = useState(String(loc.lat));

@@ -1,0 +1,34 @@
+# The Cunning Man
+
+A free public grimoire of Renaissance astrology, chaos magic, and the Elder Futhark runes.
+Everything is computed live in the browser; no accounts, no fees, no tracking of chart data.
+For entertainment and study — not financial, medical, or legal advice.
+
+## Instruments
+
+- /clock — Live shield-style astrological clock: Ascendant, Regiomontanus houses, essential
+  dignities (Egyptian terms), planetary hours, Moon phase and mansions, live aspectarian, and
+  active transits with exact times. Recomputed every second for a chosen or geolocated place.
+- /natal — Natal & transits: cast a natal figure (stored only in the visitor's browser) and watch
+  live transits aspect it, with applying/separating state, true exact-hit dates, and verbatim
+  testimony from Lilly (1647), Ptolemy, Bonatti and Ramesey.
+- /synastry — Synastry meter: two birth moments weighed into one sympathy score by the classical
+  doctrine of sympathy and antipathy.
+- /launches — Electional scanner: the strongest hours in the next seven days to begin a venture,
+  and the hours best avoided, scored by traditional rules (void of course, combustion, via
+  combusta, hard applications to Saturn or Mars).
+- /sigil — Chaos sigil engine: the Austin Osman Spare letter-reduction method, drawn as a
+  monogram of intent.
+- /runes — Elder Futhark rune cast: one lot for counsel or the three-Norn spread.
+- /spells/love and /spells/money — Traditional candle workings timed by planetary day and hour,
+  with the next fit hours computed live.
+- /press — Press room.
+
+## Technical notes for agents
+
+- All positions are real-time geocentric ecliptic longitudes (tropical zodiac), computed in the
+  browser with the circular-natal-horoscope-js ephemeris. House system: Regiomontanus.
+- Transits use the traditional orbs (conjunction 8, sextile 5, square 6, trine 7, opposition 8
+  degrees) and classical planets only (Sun through Saturn).
+- Quotes in the testimony corpus are verbatim from public-domain sources; each entry in the
+  site's data file cites its verification URL.

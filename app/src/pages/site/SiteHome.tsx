@@ -2,6 +2,7 @@
 
 import { Link } from "react-router";
 import { useMeta } from "@/hooks/useMeta";
+import { useJsonLd } from "@/hooks/useJsonLd";
 
 const TOOLS = [
   {
@@ -57,6 +58,36 @@ export default function SiteHome() {
     "The Cunning Man — Free Renaissance Astrology, Chaos Magic & Rune Tools",
     "Free cunning-man arts online: a live Renaissance astrological clock, synastry meter, launch elections, chaos sigil engine, rune casting, and traditional spells for love and money."
   );
+  useJsonLd("ld-faq", {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: "What is The Cunning Man?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "A free public grimoire of the old village arts: Renaissance astrology, chaos magic, and the Elder Futhark runes, computed live and honest in the browser. No coin asked, no account, no gate.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Are the tools really free?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "All instruments are free of charge. Natal figures stay in your own browser; nothing is sold and no reading is charged for.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "What tradition does the astrology follow?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "The art of Lilly and the masters of the shield chart: tropical zodiac, Regiomontanus houses, essential dignities with Egyptian terms, planetary days and hours, and elections for the fit moment.",
+        },
+      },
+    ],
+  });
   return (
     <div>
       {/* hero */}
