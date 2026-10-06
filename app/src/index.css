@@ -1,0 +1,130 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 5.9% 10%;
+    --radius: 0.625rem;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* ---- Daimon widget host integration (inlined from widgetdesign assets) ---- */
+:root {
+  --daimon-widget-host-safe-inline-end: 190px;
+  --daimon-widget-host-safe-block-start: 44px;
+}
+
+.kimi-host-safe-context {
+  container-type: inline-size;
+}
+
+.kimi-host-safe-header {
+  box-sizing: border-box;
+  min-block-size: var(--daimon-widget-host-safe-block-start, 44px);
+  padding-inline-end: var(--daimon-widget-host-safe-inline-end, 190px);
+}
+
+@container (max-width: 419px) {
+  .kimi-host-safe-header {
+    min-block-size: 0;
+    padding-block-start: var(--daimon-widget-host-safe-block-start, 44px);
+    padding-inline-end: 0;
+  }
+}
+
+[data-kimi-root] {
+  box-sizing: border-box;
+  inline-size: 100%;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  overflow: visible;
+}
+
+[data-kimi-root] * {
+  box-sizing: border-box;
+  min-inline-size: 0;
+}
+
+/* Compact host tier: P0 (the wheel) only — panels/header/footer reflow away */
+html[data-daimon-size-tier="compact"] [data-kimi-priority="p1"],
+html[data-daimon-size-tier="compact"] [data-kimi-priority="p2"],
+html[data-daimon-size-tier="compact"] [data-kimi-priority="p3"] {
+  display: none !important;
+}
+
+/* In a compact host frame, cap the wheel so it fits a 240x160 placement */
+html[data-daimon-size-tier="compact"] .wheel-frame {
+  max-inline-size: 150px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-kimi-root] * {
+    scroll-behavior: auto;
+  }
+}
