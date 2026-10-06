@@ -13,11 +13,18 @@ import { loadNatal, saveNatal, clearNatal, type NatalProfile } from "@/lib/natal
 import { hitLine, exactLabel, natalPointLabel } from "@/lib/transitFormat";
 import { SquareChart } from "@/components/SquareChart";
 import { TestimonyCard } from "@/components/TestimonyCard";
+import { CitySearch } from "@/components/CitySearch";
 import { useMeta } from "@/hooks/useMeta";
 import { useJsonLd } from "@/hooks/useJsonLd";
 
-function TransitRow({ hit, exactAt, now }: { hit: TransitHit; exactAt: Date | null; now: Date }): ReactElement {
-  const testimony = lookupTestimony(hit.transiting, hit.aspectKey);
+// datetime-local values are wall time without a zone; shift the stored UTC
+// instant into the browser's zone so the field shows the entrant's local moment
+function toLocalInputValue(d: Date): string {
+  const offMs = d.getTimezoneOffset() * 60000;
+  return new Date(d.getTime() - offMs).toISOString().slice(0, 16);
+}
+
+function TransitRow({ hit, exactAt, now }: { hit: TransitHit; exactAt: Date | null; now: Date }): ReactElement {  const testimony = lookupTestimony(hit.transiting, hit.aspectKey);
   return (
     <li className="py-2 border-b border-line/60 last:border-0">
       <p className="font-ui text-[13px]">
@@ -227,8 +234,10 @@ function NatalForm({
 }): ReactElement {
   const { loc, refreshLocation } = useSky();
   const [name, setName] = useState(initial?.name ?? "");
-  const [birth, setBirth] = useState(
-    initial ? initial.birth.slice(0, 16) : ""
+  // datetime-local shows wall time; the stored instant is UTC — convert so the
+  // field displays (and re-edits) the entrant's local moment, not a UTC slice
+  const [birth, setBirth] = useState(() =>
+    initial ? toLocalInputValue(new Date(initial.birth)) : ""
   );
   const [placeName, setPlaceName] = useState(initial?.placeName ?? "");
   const [latText, setLatText] = useState(String(initial?.lat ?? loc.lat));
@@ -309,6 +318,13 @@ function NatalForm({
             required
           />
         </label>
+        <CitySearch
+          onPick={(r) => {
+            setPlaceName(r.name);
+            setLatText(String(r.lat));
+            setLngText(String(r.lng));
+          }}
+        />
         <label className="flex flex-col gap-1 text-[13px]">
           <span className="font-bold font-smallcaps">Place name</span>
           <input
