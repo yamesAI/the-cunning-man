@@ -6,8 +6,8 @@
 
 import { Horoscope, Origin } from "circular-natal-horoscope-js";
 import tzlookup from "tz-lookup";
-import type { PlanetKey, SignKey } from "./constants";
-import { PLANETS, SIGNS } from "./constants";
+import type { PlanetKey, SignKey, AspectKey } from "./constants";
+import { PLANETS, SIGNS, ASPECT_DEFS } from "./constants";
 import { norm360, forwardDist, angleDiff, wallParts, tzOffsetLabel, pad, type WallParts } from "./format";
 import { sunEvents, type SunEvents } from "./sun";
 import {
@@ -42,7 +42,7 @@ export interface NearestPhase {
 export interface AspectCell {
   p1: PlanetKey;
   p2: PlanetKey;
-  aspectKey: string; // "conjunction" | "sextile" | "square" | "trine" | "opposition"
+  aspectKey: AspectKey; // "conjunction" | "sextile" | "square" | "trine" | "opposition"
   angle: number;     // 0 | 60 | 90 | 120 | 180
   orb: number;
   applying: boolean;
@@ -303,13 +303,6 @@ export function computeChart(date: Date, lat: number, lng: number): ChartData {
   }
 
   // Full aspectarian: every planet pair, major aspects with traditional orbs
-  const ASPECT_DEFS: Array<{ angle: number; key: string; orb: number }> = [
-    { angle: 0, key: "conjunction", orb: 8 },
-    { angle: 60, key: "sextile", orb: 5 },
-    { angle: 90, key: "square", orb: 6 },
-    { angle: 120, key: "trine", orb: 7 },
-    { angle: 180, key: "opposition", orb: 8 },
-  ];
   const aspectsGrid: AspectCell[] = [];
   const lonNow = new Map(bodies.map((b) => [b.key, b.lon]));
   const lonLater = new Map(PLANETS.map((p) => [p, lonOf(hLater, p)] as [PlanetKey, number]));

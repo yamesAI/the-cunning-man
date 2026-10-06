@@ -57,3 +57,19 @@ export const ASPECT_GLYPH: Record<string, string> = {
   sextile: "⚹", quincunx: "⚻", "semi-square": "∠", "semi-sextile": "⚺",
   quintile: "Q", septile: "S",
 };
+
+// The five Ptolemaic aspects with traditional orbs, shared by the engine's
+// aspectarian and the transit calculations.
+export type AspectKey = "conjunction" | "sextile" | "square" | "trine" | "opposition";
+
+export const ASPECT_DEFS: ReadonlyArray<{
+  angle: 0 | 60 | 90 | 120 | 180;
+  key: AspectKey;
+  orb: number;
+}> = [
+  { angle: 0, key: "conjunction", orb: 8 },
+  { angle: 60, key: "sextile", orb: 5 },
+  { angle: 90, key: "square", orb: 6 },
+  { angle: 120, key: "trine", orb: 7 },
+  { angle: 180, key: "opposition", orb: 8 },
+];
