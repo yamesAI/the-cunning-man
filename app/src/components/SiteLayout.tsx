@@ -10,6 +10,7 @@ import { wallParts, tzOffsetLabel, pad } from "@/astro/format";
 
 const NAV = [
   { to: "/clock", label: "Astro Clock" },
+  { to: "/natal", label: "Natal & Transits" },
   { to: "/synastry", label: "Synastry Meter" },
   { to: "/launches", label: "Launch Elections" },
   { to: "/sigil", label: "Sigil Engine" },

@@ -4,6 +4,7 @@ import { SiteLayout } from './components/SiteLayout'
 import { inIframe } from './lib/env'
 import { SkyProvider } from './sky/SkyContext'
 import SiteHome from './pages/site/SiteHome'
+import NatalPage from './pages/site/NatalPage'
 import SynastryPage from './pages/site/SynastryPage'
 import LaunchesPage from './pages/site/LaunchesPage'
 import SigilPage from './pages/site/SigilPage'
@@ -19,6 +20,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<SiteHome />} />
           <Route path="/clock" element={<Home />} />
+          <Route path="/natal" element={<NatalPage />} />
           <Route path="/synastry" element={<SynastryPage />} />
           <Route path="/launches" element={<LaunchesPage />} />
           <Route path="/sigil" element={<SigilPage />} />
