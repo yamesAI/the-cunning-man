@@ -9,7 +9,6 @@ import { useJsonLd } from "@/hooks/useJsonLd";
 import { CITIES } from "@/data/cities";
 import { SquareChart } from "@/components/SquareChart";
 import { useTilt } from "@/hooks/useTilt";
-import { ActiveTransitsPanel } from "@/components/ActiveTransitsPanel";
 import {
   PositionsPanel, DignitiesPanel, MoonAspectsPanel, AspectGridPanel, PlanetaryHoursPanel, MoonPanel, ElectionPanel,
 } from "@/components/panels";
@@ -19,12 +18,12 @@ export default function Home() {
     "@context": "https://schema.org",
     "@type": "WebApplication",
     name: "The Cunning Man — Shield Astrological Clock",
-    url: "https://the-cunning-man.vercel.app/clock",
+    url: "https://cunning-man.vercel.app/clock",
     applicationCategory: "LifestyleApplication",
     operatingSystem: "Any (web browser)",
     offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
     description:
-      "A living Renaissance shield chart: Ascendant, houses, essential dignities, planetary hours, Moon, live aspects and active transits, recomputed every second for your horizon. Free.",
+      "A living Renaissance shield chart: Ascendant, houses, essential dignities, planetary hours, Moon, and the live aspectarian, recomputed every second for your horizon. Free.",
   });
   const { now, loc, setLoc, refreshLocation } = useSky();
   const [offsetMs, setOffsetMs] = useState(0);
@@ -165,7 +164,6 @@ export default function Home() {
       <main className="flex-1 min-h-0 flex flex-col lg:flex-row gap-3 p-3">
         {/* left column */}
         <div data-kimi-priority="p2" className="flex lg:flex-col flex-wrap gap-3 lg:w-[350px] shrink-0 [&>*]:w-full lg:overflow-y-auto lg:overflow-x-hidden lg:pr-1">
-          <ActiveTransitsPanel chart={chart} />
           <DignitiesPanel chart={chart} />
           <MoonAspectsPanel chart={chart} />
           <AspectGridPanel chart={chart} />
