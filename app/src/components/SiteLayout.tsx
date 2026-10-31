@@ -113,6 +113,14 @@ export function SiteLayout({ children }: { children: ReactNode }) {
         <div className="max-w-6xl mx-auto px-4 py-4 text-[12px] text-ink-soft flex flex-wrap gap-x-6 gap-y-1">
           <span>☿ The Cunning Man — all arts free of charge</span>
           <span className="italic">For entertainment &amp; study. Not financial, medical, or legal advice.</span>
+          <a
+            href="/downloads/ai-vs-the-sky.pdf"
+            download
+            className="underline hover:text-ink"
+            title="Education only, not financial advice. Futures trading involves substantial risk of loss."
+          >
+            Free download: AI vs the Sky (PDF)
+          </a>
           <span className="ml-auto italic">Tropical · Geocentric · Regiomontanus</span>
         </div>
       </footer>
