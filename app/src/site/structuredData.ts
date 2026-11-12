@@ -31,12 +31,13 @@ function base(type: string, path: string, name: string, description: string): Js
   };
 }
 
-function webApp(path: string, name: string, description: string): Json {
+function webApp(path: string, name: string, description: string, featureList?: string[]): Json {
   return {
     ...base("WebApplication", path, name, description),
     applicationCategory: "LifestyleApplication",
     operatingSystem: "Any (web browser)",
     isAccessibleForFree: true,
+    ...(featureList ? { featureList } : {}),
   };
 }
 
@@ -98,6 +99,15 @@ const STATIC: Record<string, () => Json> = {
       "/clock",
       "The Cunning Man — Shield Astrological Clock",
       "A living Renaissance shield chart: Ascendant, houses, essential dignities, planetary hours, Moon, and the live aspectarian, recomputed every second for your horizon."
+    ),
+  // SKY-001 §5: WebApplication, free, featureList limited to these three; no
+  // Offer, no result CreativeWork in v0.
+  "/sky": () =>
+    webApp(
+      "/sky",
+      "The Cunning Man — Session Sky",
+      "Traditional sky for a time window you choose: essential dignities, planetary hours and the Moon, computed in your browser. For entertainment and study.",
+      ["Essential dignities", "Planetary hours", "Moon phase, sign and mansion"]
     ),
   "/natal": () =>
     webApp(

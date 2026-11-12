@@ -9,6 +9,10 @@ For entertainment and study — not financial, medical, or legal advice.
 - /clock — Live shield-style astrological clock: Ascendant, Regiomontanus houses, essential
   dignities (Egyptian terms), planetary hours, Moon phase and mansions, live aspectarian, and
   active transits with exact times. Recomputed every second for a chosen or geolocated place.
+- /sky — Session Sky: the traditional sky across a time window you choose (up to 48 hours), for a
+  chosen or geolocated place, shown in any timezone: essential dignities of the seven planets at
+  the window start with any sign changes, every planetary hour and planetary day in the window,
+  and the Moon's sign, phase, mansion and aspects, with its changes and quarters inside the window.
 - /natal — Natal & transits: cast a natal figure (stored only in the visitor's browser) and watch
   live transits aspect it, with applying/separating state, true exact-hit dates, and verbatim
   testimony from Lilly (1647), Ptolemy, Bonatti and Ramesey.
