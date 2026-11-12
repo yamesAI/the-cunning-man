@@ -12,7 +12,8 @@
     "check:transits": "vite-node scripts/check-transits.ts",
     "check:tradition": "vite-node scripts/check-tradition.ts",
     "check:perf": "vite-node scripts/check-perf.ts",
-    "check:schema": "vite-node scripts/check-schema.ts"
+    "check:schema": "vite-node scripts/check-schema.ts",
+    "check:sky": "vite-node scripts/check-sky.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

@@ -19,13 +19,16 @@ const FORBIDDEN_TYPES = new Set(["Offer", "MonetaryAmount", "PriceSpecification"
   "MedicalWebPage", "FinancialProduct", "FinancialService", "InvestmentOrDeposit", "Organization"]);
 const FORBIDDEN_TEXT = [/CunningMan AstroTrading/i, /AstroTrading/i, /\bprop[- ]?firm/i, /MonetaryAmount/, /"Offer"/, /"price/i];
 
-function walk(v: unknown, where: string) {
-  if (Array.isArray(v)) return v.forEach((x, i) => walk(x, `${where}[${i}]`));
+// SKY-001 §5: /sky alone may carry featureList (checked exactly below).
+const ALLOWED_KEYS: Record<string, Set<string>> = { "/sky": new Set(["featureList"]) };
+
+function walk(v: unknown, where: string, allow: Set<string> = new Set()) {
+  if (Array.isArray(v)) return v.forEach((x, i) => walk(x, `${where}[${i}]`, allow));
   if (v && typeof v === "object") {
     for (const [k, x] of Object.entries(v as Record<string, unknown>)) {
-      assert(!FORBIDDEN_KEYS.has(k), `${where}: forbidden key ${k}`);
+      assert(!FORBIDDEN_KEYS.has(k) || allow.has(k), `${where}: forbidden key ${k}`);
       if (k === "@type") assert(!FORBIDDEN_TYPES.has(String(x)), `${where}: forbidden @type ${x}`);
-      walk(x, `${where}.${k}`);
+      walk(x, `${where}.${k}`, allow);
     }
   }
 }
@@ -40,13 +43,13 @@ function common(path: string, ld: Record<string, unknown>) {
   assert(part && part["@type"] === "WebSite" && part.name === "The Cunning Man" && part.url === `${SITE_ORIGIN}/`, `${path}: isPartOf WebSite`);
   const text = JSON.stringify(ld);
   for (const re of FORBIDDEN_TEXT) assert(!re.test(text), `${path}: forbidden text ${re}`);
-  walk(ld, path);
+  walk(ld, path, ALLOWED_KEYS[path]);
 }
 
 // 1. known routes emit the expected @type; 5. canonical == url == route
 const EXPECT: Record<string, string> = {
   "/": "FAQPage", "/clock": "WebApplication", "/natal": "WebApplication", "/synastry": "WebApplication",
-  "/launches": "WebApplication", "/sigil": "WebApplication", "/runes": "WebApplication",
+  "/launches": "WebApplication", "/sky": "WebApplication", "/sigil": "WebApplication", "/runes": "WebApplication",
   "/spells/love": "WebPage", "/spells/money": "WebPage", "/press": "CollectionPage",
 };
 const canonicals = new Set<string>();
@@ -81,6 +84,21 @@ assert(!/advice|compatib/i.test(JSON.stringify(routeHead("/synastry").jsonLd)), 
 assert(!/in money|wealth|money/i.test(JSON.stringify(routeHead("/runes").jsonLd)), "/runes: no money meanings");
 assert(routeHead("/spells/love").jsonLd!.about === "traditional love working", "/spells/love: about");
 assert(!/prosper|wealth|riches/i.test(JSON.stringify(routeHead("/spells/money").jsonLd)), "/spells/money: no prosperity claims");
+
+// /sky (SKY-001 §5): exact description and featureList, free, no Offer/price, no trading wording, no result CreativeWork
+{
+  const ld = routeHead("/sky").jsonLd!;
+  const text = JSON.stringify(ld);
+  assert(ld.name === "The Cunning Man — Session Sky", "/sky: name");
+  assert(ld.description === "Traditional sky for a time window you choose: essential dignities, planetary hours and the Moon, computed in your browser. For entertainment and study.", "/sky: description");
+  assert(/for entertainment and study/i.test(desc("/sky")), "/sky: entertainment and study wording");
+  assert(ld.isAccessibleForFree === true && ld.operatingSystem === "Any (web browser)", "/sky: free, any browser");
+  assert(JSON.stringify(ld.featureList) === JSON.stringify(["Essential dignities", "Planetary hours", "Moon phase, sign and mansion"]), "/sky: featureList exactly three items");
+  assert(!/Offer|price|MonetaryAmount|offers/i.test(text), "/sky: no Offer/price/MonetaryAmount");
+  assert(!/CreativeWork|temporalCoverage|isBasedOn/.test(text), "/sky: no result CreativeWork in v0");
+  assert(!/\btrad(e|es|er|ers|ing)\b|\bentr(y|ies)\b|\bexit|signal|\bbuy\b|\bsell\b|\bedge\b|win rate|profit|market|ticker|funded|prop[- ]?firm|advice|disclaimer|forecast/i.test(text), "/sky: no trading/advice wording");
+  assert(Object.keys(ld).sort().join(",") === "@context,@type,applicationCategory,description,featureList,inLanguage,isAccessibleForFree,isPartOf,name,operatingSystem,url", "/sky: only the §5 properties");
+}
 
 // /press ItemList
 const list = routeHead("/press").jsonLd!.mainEntity as Record<string, unknown>;

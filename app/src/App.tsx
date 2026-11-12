@@ -12,6 +12,7 @@ import RunesPage from './pages/site/RunesPage'
 import SpellPage from './pages/site/SpellPage'
 import PressIndex from './pages/site/PressIndex'
 import PressRelease from './pages/site/PressRelease'
+import SessionSkyPage from './pages/site/SessionSkyPage'
 import { RouteHead } from './components/RouteHead'
 
 export default function App() {
@@ -22,6 +23,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<SiteHome />} />
           <Route path="/clock" element={<Home />} />
+          <Route path="/sky" element={<SessionSkyPage />} />
           <Route path="/natal" element={<NatalPage />} />
           <Route path="/synastry" element={<SynastryPage />} />
           <Route path="/launches" element={<LaunchesPage />} />

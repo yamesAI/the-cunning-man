@@ -10,6 +10,11 @@ const TOOLS = [
     tag: "Live",
   },
   {
+    to: "/sky", glyph: "☉", title: "Session Sky",
+    blurb: "Choose a time window and a place, and read the traditional sky across it — essential dignities, every planetary hour, and the Moon's sign, phase and mansion.",
+    tag: "Live",
+  },
+  {
     to: "/natal", glyph: "☽", title: "Natal & Transits",
     blurb: "Cast your natal figure once, then watch the living sky aspect it — exact hits, applying and separating, with testimony from Lilly, Ptolemy and the tradition.",
     tag: "Live",
