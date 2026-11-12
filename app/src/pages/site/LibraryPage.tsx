@@ -1,6 +1,6 @@
 // Library (LIB-001 v0): a study collection, not a lending library. Metadata-only
 // listing of the four historical works the hub already cites; each links out to
-// a public-domain scan. No full text is hosted. JSON-LD comes from
+// a public-domain source. No full text is hosted. JSON-LD comes from
 // src/site/structuredData.ts via RouteHead.
 
 import { LIBRARY_BOOKS, LIBRARY_DESCRIPTION, LIBRARY_SUBTITLE, LIBRARY_TERMS, LIBRARY_TITLE } from "@/site/library";
@@ -32,7 +32,7 @@ export default function LibraryPage() {
               {b.scanNote ? <p className="text-[12px] italic text-ink-soft">{b.scanNote}</p> : null}
               <p className="text-[12px] mt-1">
                 <a href={b.url} target="_blank" rel="noopener noreferrer" className="underline hover:text-seal">
-                  Read the public-domain scan ↗
+                  Read the public-domain source ↗
                 </a>{" "}
                 · <span className="text-ink-soft">facet: <a href={`#term-${b.facet}`} className="underline">{b.facet}</a></span>
               </p>

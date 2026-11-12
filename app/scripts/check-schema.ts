@@ -5,7 +5,7 @@ import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { routeHead, absUrl, isoDate, SITE_ORIGIN } from "../src/site/structuredData";
 import { PRESS } from "../src/site/press";
-import { LIBRARY_BOOKS, LIBRARY_TERMS } from "../src/site/library";
+import { LIBRARY_BOOKS, LIBRARY_DESCRIPTION, LIBRARY_SUBTITLE, LIBRARY_TERMS } from "../src/site/library";
 import { TESTIMONY } from "../src/data/tradition";
 
 let n = 0;
@@ -210,6 +210,22 @@ items.forEach((it, i) => {
   const llms = readFileSync(new URL("../public/llms.txt", import.meta.url), "utf8");
   assert(sitemap.includes("<loc>https://cunning-man.vercel.app/library</loc>") && !/\/library\//.test(sitemap), "sitemap: /library, no /library/:slug");
   assert(/^- \/library — /m.test(llms), "llms.txt: /library line");
+  // L-1: shared copy must be true of all four sources (Ptolemy's URL is an
+  // HTML transcription, not a scan). Per-item scanNotes may still say "scan".
+  assert(ld.description === LIBRARY_DESCRIPTION, "/library: JSON-LD description matches page description");
+  assert(!/scan/i.test(LIBRARY_SUBTITLE) && !/scan/i.test(LIBRARY_DESCRIPTION), "/library: subtitle and description do not call every source a scan");
+  assert(/public-domain source/.test(LIBRARY_SUBTITLE) && /public-domain sources/.test(LIBRARY_DESCRIPTION), "/library: shared wording is public-domain source(s)");
+  const pageSrc = readFileSync(new URL("../src/pages/site/LibraryPage.tsx", import.meta.url), "utf8");
+  assert(!/public-domain scan/.test(pageSrc), "/library page: no shared 'public-domain scan' link label");
+  assert(/Read the public-domain source/.test(pageSrc), "/library page: shared link label is public-domain source");
+  const libLine = (llms.match(/^- \/library — [\s\S]*?(?=\n- |\n## |$)/m) || [""])[0];
+  assert(libLine.length > 0 && !/scan/i.test(libLine), "llms.txt /library line does not call every source a scan");
+  const ramesey = LIBRARY_BOOKS.find((b) => b.id === "astrologia-restaurata")!;
+  const bonatti = LIBRARY_BOOKS.find((b) => b.id === "liber-astronomiae")!;
+  const ptolemy = LIBRARY_BOOKS.find((b) => b.id === "tetrabiblos")!;
+  assert(ramesey.year === 1653 && /1654/.test(ramesey.scanNote ?? ""), "/library Ramesey: year 1653, scan note 1654");
+  assert(bonatti.year === 1676 && /1676/.test(bonatti.yearLabel) && /1886/.test(bonatti.scanNote ?? "") && /1676 title page/.test(bonatti.scanNote ?? ""), "/library Bonatti: year 1676, scan note 1886 and 1676 title page");
+  assert(!(ptolemy.scanNote ?? "").length, "/library Ptolemy: no scan note on the HTML source");
 }
 
 // /press/:slug -> Article (not NewsArticle), including trading-clock (owner 2026-11-12 09:05)

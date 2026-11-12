@@ -8,9 +8,9 @@
 export const LIBRARY_PATH = "/library";
 export const LIBRARY_TITLE = "The Cunning Man — Library";
 export const LIBRARY_SUBTITLE =
-  "A study collection of the old sources behind these arts, not a lending library. Each item links out to a public-domain scan; no full text is hosted here.";
+  "A study collection of the old sources behind these arts, not a lending library. Each item links out to a public-domain source; no full text is hosted here.";
 export const LIBRARY_DESCRIPTION =
-  "A study collection of the historical astrology books cited on The Cunning Man, listed by title, author and year with links to public-domain scans. For entertainment and study.";
+  "A study collection of the historical astrology books cited on The Cunning Man, listed by title, author and year with links to public-domain sources. For entertainment and study.";
 
 export type FacetCode = "esoteric" | "exoteric" | "market-study";
 
@@ -51,7 +51,7 @@ export interface LibraryBook {
   year: number;       // the year field data/tradition.ts records
   yearLabel: string;  // visible year text
   note: string;       // short neutral note (visible + JSON-LD description)
-  scanNote?: string;  // visible only; repeats a comment already in data/tradition.ts
+  scanNote?: string;  // visible only; a dating note about the linked copy
   url: string;        // the verification URL data/tradition.ts already cites
   facet: FacetCode;
 }
@@ -97,6 +97,7 @@ export const LIBRARY_BOOKS: LibraryBook[] = [
     year: 1676,
     yearLabel: "1676 (Coley translation)",
     note: "Guido Bonatti's 146 Considerations in Henry Coley's English translation, also cited as Anima Astrologiae; cited on the natal page.",
+    scanNote: "The linked scan is dated 1886 and reproduces the 1676 title page.",
     url: "https://archive.org/details/astrologersguide00lill",
     facet: "esoteric",
   },
