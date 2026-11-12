@@ -242,7 +242,7 @@ export function PlanetaryHoursPanel({ chart, now }: { chart: ChartData; now: Dat
   );
 }
 
-// ---------- day trading election ----------
+// ---------- election ----------
 const ANGLE_GLYPH: Record<number, string> = { 0: "☌", 60: "⚹", 90: "□", 120: "△", 180: "☍" };
 
 export function ElectionPanel({
@@ -264,9 +264,9 @@ export function ElectionPanel({
     }).format(d);
   const inMs = best.date.getTime() - now.getTime();
   return (
-    <Panel title="Day Trading Election" right={<span className="text-[10px] italic">next 72h · session 6a–3p UTC-5</span>}>
+    <Panel title="Election" right={<span className="text-[10px] italic">next 72h · 6a–3p UTC-5</span>}>
       <div className="px-1.5 py-1.5 border border-brass bg-brass/10 mb-1">
-        <div className="text-[11px] uppercase tracking-wide text-ink-soft">Strongest entry window</div>
+        <div className="text-[11px] uppercase tracking-wide text-ink-soft">Strongest electional moment</div>
         <div className="text-[16px] font-bold leading-tight">{fmtD(best.date)}</div>
         <div className="flex items-baseline justify-between">
           <span className="text-[13px] font-bold">
@@ -314,7 +314,7 @@ export function ElectionPanel({
       {blocked.length > 0 && (
         <div className="border border-seal bg-seal/10 mx-1 mb-1 px-1.5 py-1">
           <div className="text-[11px] font-bold uppercase tracking-wide text-seal-deep">
-            ⛔ Do not trade — session blocks
+            ⛔ Do not begin during these hours
           </div>
           {blocked.map((b, i) => {
             const active = b.start.getTime() <= now.getTime() && now.getTime() <= b.end.getTime();
