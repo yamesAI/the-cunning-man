@@ -7,6 +7,10 @@
 // not here (schema.org has no disclaimer property).
 
 import { PRESS } from "./press";
+import {
+  LIBRARY_BOOKS, LIBRARY_DESCRIPTION, LIBRARY_PATH, LIBRARY_TERMS, LIBRARY_TITLE, TERM_SET_NAME,
+  type FacetCode,
+} from "./library";
 
 export const SITE_ORIGIN = "https://cunning-man.vercel.app";
 export const SITE_NAME = "The Cunning Man";
@@ -82,6 +86,63 @@ const FAQ: Json[] = [
     },
   },
 ];
+
+// LIB-001 §4: /library is a CollectionPage whose mainEntity is an ItemList of
+// metadata-only Books (the works data/tradition.ts already cites) and whose
+// hasPart is the facet DefinedTermSet. Not schema.org Library/LibrarySystem;
+// no invented types. Books carry author/translator as Person with name only.
+const LIBRARY_URL = absUrl(LIBRARY_PATH);
+const TERM_SET_REF: Json = { "@type": "DefinedTermSet", name: TERM_SET_NAME, url: `${LIBRARY_URL}#facets` };
+
+function termUrl(code: FacetCode): string {
+  return `${LIBRARY_URL}#term-${code}`;
+}
+
+function termRef(code: FacetCode): Json {
+  const t = LIBRARY_TERMS.find((x) => x.code === code)!;
+  return { "@type": "DefinedTerm", name: t.name, termCode: t.code, url: termUrl(t.code) };
+}
+
+function libraryPage(): Json {
+  return {
+    ...base("CollectionPage", LIBRARY_PATH, LIBRARY_TITLE, LIBRARY_DESCRIPTION),
+    isAccessibleForFree: true,
+    mainEntity: {
+      "@type": "ItemList",
+      numberOfItems: LIBRARY_BOOKS.length,
+      itemListElement: LIBRARY_BOOKS.map((b, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        item: {
+          "@type": "Book",
+          name: b.title,
+          description: b.note,
+          url: b.url,
+          inLanguage: "en",
+          isAccessibleForFree: true,
+          keywords: termRef(b.facet),
+          author: { "@type": "Person", name: b.author },
+          ...(b.translator ? { translator: { "@type": "Person", name: b.translator } } : {}),
+          datePublished: String(b.year),
+        },
+      })),
+    },
+    hasPart: {
+      ...TERM_SET_REF,
+      inLanguage: "en",
+      isAccessibleForFree: true,
+      isPartOf: IS_PART_OF,
+      hasDefinedTerm: LIBRARY_TERMS.map((t) => ({
+        "@type": "DefinedTerm",
+        name: t.name,
+        description: t.definition,
+        termCode: t.code,
+        url: termUrl(t.code),
+        inDefinedTermSet: TERM_SET_REF,
+      })),
+    },
+  };
+}
 
 /** Exact known static paths -> JSON-LD. Lower-case, no trailing slash. */
 const STATIC: Record<string, () => Json> = {
@@ -173,6 +234,7 @@ const STATIC: Record<string, () => Json> = {
       })),
     },
   }),
+  [LIBRARY_PATH]: libraryPage,
 };
 
 /** Normalise a location pathname for lookup: strip trailing slashes. */

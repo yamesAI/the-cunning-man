@@ -27,6 +27,10 @@ For entertainment and study — not financial, medical, or legal advice.
 - /spells/love and /spells/money — Traditional candle workings timed by planetary day and hour,
   with the next fit hours computed live.
 - /press — Press room.
+- /library — Library: a study collection, not a lending library. Four historical astrology books
+  the site already cites (Lilly 1647, Ptolemy trans. Ashmand 1822, Ramesey 1653, Bonatti trans.
+  Coley 1676), listed by title, author and year with links to public-domain scans; no full text
+  is hosted. Facets: esoteric, exoteric, market-study.
 
 ## Technical notes for agents
 
