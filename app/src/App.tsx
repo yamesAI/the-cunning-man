@@ -12,11 +12,13 @@ import RunesPage from './pages/site/RunesPage'
 import SpellPage from './pages/site/SpellPage'
 import PressIndex from './pages/site/PressIndex'
 import PressRelease from './pages/site/PressRelease'
+import { RouteHead } from './components/RouteHead'
 
 export default function App() {
   return (
     <SkyProvider>
       <SiteLayout>
+        <RouteHead />
         <Routes>
           <Route path="/" element={<SiteHome />} />
           <Route path="/clock" element={<Home />} />
