@@ -175,6 +175,47 @@ for (const p of PLACES.filter((x) => !["Chicago", "Cancun"].includes(x.name))) {
   assert(!pd.planetaryDay && !!pd.note, "Longyearbyen 20 Dec: polar note matches null sunEvents");
 }
 
+// Polar midwinter / midsummer stay null (no invented hours). McMurdo is
+// Antarctic, so midwinter is June and midsummer is December.
+const MCMURDO = { lat: -77.8419, lng: 166.6863 };
+for (const [name, place, month0, day] of [
+  ["Longyearbyen midwinter", SVAL, 11, 20],
+  ["Longyearbyen midsummer", SVAL, 5, 21],
+  ["McMurdo midwinter", MCMURDO, 5, 21],
+  ["McMurdo midsummer", MCMURDO, 11, 21],
+] as Array<[string, { lat: number; lng: number }, number, number]>) {
+  const ev = sunEvents(2026, month0, day, place.lat, place.lng);
+  assert(!ev.sunrise && !ev.sunset && !ev.nextSunrise, `${name}: sunEvents stay null`);
+}
+
+// Transition days: an exact 24 h duplicate of sunrise or sunset across
+// adjacent civil dates must fail. Covers Longyearbyen 2026-02-15/16 and
+// 2026-04-18, and McMurdo 2026-02-19/20, plus the rest of 2026.
+const DAY_MS = 24 * H;
+function assertNoExactDayCopy(name: string, lat: number, lng: number) {
+  let prev: ReturnType<typeof sunEvents> | null = null;
+  for (let i = 0; i < 365; i++) {
+    const dt = new Date(Date.UTC(2026, 0, 1 + i));
+    const ev = sunEvents(dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate(), lat, lng);
+    if (prev) {
+      const ymd = `${dt.getUTCFullYear()}-${dt.getUTCMonth() + 1}-${dt.getUTCDate()}`;
+      if (prev.sunrise && ev.sunrise) {
+        assert(ev.sunrise.getTime() - prev.sunrise.getTime() !== DAY_MS, `${name} ${ymd}: sunrise is not an exact 24 h copy of the previous civil date`);
+      }
+      if (prev.sunset && ev.sunset) {
+        assert(ev.sunset.getTime() - prev.sunset.getTime() !== DAY_MS, `${name} ${ymd}: sunset is not an exact 24 h copy of the previous civil date`);
+      }
+    }
+    if (ev.sunrise && ev.nextSunrise) {
+      const ymd = `${dt.getUTCFullYear()}-${dt.getUTCMonth() + 1}-${dt.getUTCDate()}`;
+      assert(ev.nextSunrise.getTime() - ev.sunrise.getTime() !== DAY_MS, `${name} ${ymd}: nextSunrise is not an exact 24 h copy of sunrise`);
+    }
+    prev = ev;
+  }
+}
+assertNoExactDayCopy("Longyearbyen", SVAL.lat, SVAL.lng);
+assertNoExactDayCopy("McMurdo", MCMURDO.lat, MCMURDO.lng);
+
 // no election code in Session Sky
 for (const f of ["../src/astro/sessionsky.ts", "../src/pages/site/SessionSkyPage.tsx"]) {
   const s = readFileSync(new URL(f, import.meta.url), "utf8");
