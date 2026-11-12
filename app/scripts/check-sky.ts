@@ -8,8 +8,10 @@ import {
   MAX_WINDOW_MS, checkWindow, clampEnd, findChanges, fromLocalInput, thisPlanetaryDay,
   toLocalInput, windowHours, zonedWallToDate,
 } from "../src/astro/sessionsky";
-import { buildHoroscope, lonOf } from "../src/astro/engine";
+import { buildHoroscope, lonOf, tzForLocation } from "../src/astro/engine";
 import { moonMansion } from "../src/astro/traditional";
+import { sunEvents } from "../src/astro/sun";
+import { wallParts } from "../src/astro/format";
 
 let n = 0;
 function assert(cond: unknown, msg: string) {
@@ -80,6 +82,98 @@ const pd = thisPlanetaryDay(new Date("2026-12-20T12:00:00Z"), SVAL.lat, SVAL.lng
 assert(!pd.planetaryDay && pd.note && pd.end.getTime() - pd.start.getTime() === 24 * H, "polar default: civil day with a note");
 const pw = windowHours(pd.start, pd.end, SVAL.lat, SVAL.lng);
 assert(pw.hours.length === 0 && pw.days.length === 0 && pw.notes.length >= 1 && /polar/.test(pw.notes[0]), "polar window: no hours, plain note");
+
+// H-1 / L-1: sunrise, sunset and nextSunrise on the location's civil date
+// at longitudes away from Greenwich, and in Chicago/Cancun summer. 24
+// positive-length contiguous hours per planetary day. The polar note appears
+// only when sunEvents returns a null sunrise, sunset or nextSunrise.
+const PLACES: Array<{ name: string; lat: number; lng: number }> = [
+  { name: "Los Angeles", lat: 34.0522, lng: -118.2437 },
+  { name: "Honolulu", lat: 21.3069, lng: -157.8583 },
+  { name: "Tokyo", lat: 35.6762, lng: 139.6503 },
+  { name: "Sydney", lat: -33.8688, lng: 151.2093 },
+  { name: "Auckland", lat: -36.8485, lng: 174.7633 },
+  { name: "Chicago", lat: 41.8781, lng: -87.6298 },
+  { name: "Cancun", lat: 21.1619, lng: -86.8515 },
+];
+
+function addCivil(year: number, month0: number, day: number, delta: number) {
+  const d = new Date(Date.UTC(year, month0, day + delta));
+  return { year: d.getUTCFullYear(), month: d.getUTCMonth(), day: d.getUTCDate() };
+}
+
+function assertSunDay(name: string, lat: number, lng: number, year: number, month0: number, day: number) {
+  const tz = tzForLocation(lat, lng);
+  const ev = sunEvents(year, month0, day, lat, lng);
+  const missing = !ev.sunrise || !ev.sunset || !ev.nextSunrise;
+  const noon = zonedWallToDate({ year, month: month0, day, hour: 12, minute: 0, second: 0 }, tz);
+  const dw = thisPlanetaryDay(noon, lat, lng);
+  if (missing) {
+    assert(!dw.planetaryDay && !!dw.note, `${name} ${year}-${month0 + 1}-${day}: polar note only when sunEvents is null`);
+    return;
+  }
+  assert(dw.planetaryDay && dw.note === null, `${name} ${year}-${month0 + 1}-${day}: no polar note when sunEvents is complete`);
+  assert(ev.sunrise! < ev.sunset! && ev.sunset! < ev.nextSunrise!, `${name} ${year}-${month0 + 1}-${day}: sunrise < sunset < nextSunrise`);
+  const sr = wallParts(ev.sunrise!, tz);
+  assert(sr.year === year && sr.month === month0 && sr.day === day, `${name} sunrise on local civil date (got ${sr.year}-${sr.month + 1}-${sr.day})`);
+  const ss = wallParts(ev.sunset!, tz);
+  assert(ss.year === year && ss.month === month0 && ss.day === day, `${name} sunset on local civil date`);
+  const nxt = addCivil(year, month0, day, 1);
+  const ns = wallParts(ev.nextSunrise!, tz);
+  assert(ns.year === nxt.year && ns.month === nxt.month && ns.day === nxt.day, `${name} nextSunrise on the following civil date`);
+  const wh = windowHours(dw.start, dw.end, lat, lng);
+  assert(wh.hours.length === 24 && wh.notes.length === 0 && wh.days.length === 1, `${name} ${year}-${month0 + 1}-${day}: 24 hours, one day, no polar note`);
+  for (let i = 0; i < wh.hours.length; i++) {
+    assert(wh.hours[i].end.getTime() > wh.hours[i].start.getTime(), `${name} hour ${i} has positive length`);
+  }
+  for (let i = 1; i < wh.hours.length; i++) {
+    assert(Math.abs(wh.hours[i].start.getTime() - wh.hours[i - 1].end.getTime()) < 1000, `${name} hours contiguous at ${i}`);
+  }
+}
+
+for (const p of PLACES) {
+  // a midwinter and midsummer day for every listed place
+  for (const [month0, day] of [[0, 15], [5, 21], [10, 12]] as Array<[number, number]>) {
+    assertSunDay(p.name, p.lat, p.lng, 2026, month0, day);
+  }
+}
+// Chicago and Cancun through summer 2026 (1 June – 31 August)
+for (const p of PLACES.filter((x) => x.name === "Chicago" || x.name === "Cancun")) {
+  for (let d = 0; d < 92; d++) {
+    const dt = new Date(Date.UTC(2026, 5, 1 + d));
+    assertSunDay(p.name, p.lat, p.lng, dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate());
+  }
+}
+// Year of 2026 at 17:00 UTC (the QC H-1 sample) for the far-longitude places
+for (const p of PLACES.filter((x) => !["Chicago", "Cancun"].includes(x.name))) {
+  for (let d = 0; d < 365; d++) {
+    const when = new Date(Date.UTC(2026, 0, 1, 17) + d * 86400000);
+    const tz = tzForLocation(p.lat, p.lng);
+    const w = wallParts(when, tz);
+    const ev = sunEvents(w.year, w.month, w.day, p.lat, p.lng);
+    const dw = thisPlanetaryDay(when, p.lat, p.lng);
+    const missing = !ev.sunrise || !ev.sunset || !ev.nextSunrise;
+    if (missing) {
+      assert(!dw.planetaryDay && !!dw.note, `${p.name} day ${d}: polar note only when sunEvents is null`);
+    } else {
+      assert(dw.planetaryDay && dw.note === null, `${p.name} day ${d}: no polar note when sunEvents is complete`);
+      assert(ev.sunrise! < ev.sunset! && ev.sunset! < ev.nextSunrise!, `${p.name} day ${d}: sunrise < sunset < nextSunrise`);
+      const wh = windowHours(dw.start, dw.end, p.lat, p.lng);
+      assert(wh.hours.length === 24 && wh.notes.length === 0, `${p.name} day ${d}: 24 hours, no polar note`);
+      for (let i = 0; i < 24; i++) assert(wh.hours[i].end.getTime() > wh.hours[i].start.getTime(), `${p.name} day ${d} hour ${i} positive`);
+      for (let i = 1; i < 24; i++) {
+        assert(Math.abs(wh.hours[i].start.getTime() - wh.hours[i - 1].end.getTime()) < 1000, `${p.name} day ${d} contiguous at ${i}`);
+      }
+    }
+  }
+}
+
+// polar note appears only when sunEvents returns null (Longyearbyen already polar above)
+{
+  const ev = sunEvents(2026, 11, 20, SVAL.lat, SVAL.lng);
+  assert(!ev.sunrise || !ev.sunset || !ev.nextSunrise, "Longyearbyen 20 Dec: sunEvents is null");
+  assert(!pd.planetaryDay && !!pd.note, "Longyearbyen 20 Dec: polar note matches null sunEvents");
+}
 
 // no election code in Session Sky
 for (const f of ["../src/astro/sessionsky.ts", "../src/pages/site/SessionSkyPage.tsx"]) {

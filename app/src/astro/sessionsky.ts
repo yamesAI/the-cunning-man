@@ -101,20 +101,28 @@ export interface DefaultWindow {
 /**
  * D-1: sunrise to next sunrise of the planetary day containing `now`, at the
  * location, in the location's zone. Before sunrise the planetary day is still
- * the previous civil day's (as engine.ts computeChart does). In polar day or
- * night no sunrise exists, so the civil day (midnight to midnight) is used
- * with a plain note; no hours are invented.
+ * the previous civil day's (as engine.ts computeChart does). The civil-day
+ * fallback (midnight to midnight, with a plain note) is used only when
+ * sunEvents returns a null sunrise, sunset, or nextSunrise (polar day or
+ * night). Any other miss is retried on adjacent days, never as polar.
  */
 export function thisPlanetaryDay(now: Date, lat: number, lng: number): DefaultWindow {
   const zone = tzForLocation(lat, lng);
   const w = wallParts(now, zone);
-  for (const add of [0, -1]) {
+  let sawNull = false;
+  for (const add of [0, -1, 1, -2, 2]) {
     const c = civil(w, add);
     const ev = sunEvents(c.year, c.month, c.day, lat, lng);
-    if (!ev.sunrise || !ev.nextSunrise) break;
+    if (!ev.sunrise || !ev.sunset || !ev.nextSunrise) {
+      sawNull = true;
+      continue;
+    }
     if (now.getTime() >= ev.sunrise.getTime() && now.getTime() < ev.nextSunrise.getTime()) {
       return { start: ev.sunrise, end: ev.nextSunrise, zone, planetaryDay: true, note: null };
     }
+  }
+  if (!sawNull) {
+    throw new Error("thisPlanetaryDay: no planetary day contains this instant");
   }
   const c = civil(w);
   const n = civil(w, 1);
