@@ -13,6 +13,7 @@ import SpellPage from './pages/site/SpellPage'
 import PressIndex from './pages/site/PressIndex'
 import PressRelease from './pages/site/PressRelease'
 import SessionSkyPage from './pages/site/SessionSkyPage'
+import LibraryPage from './pages/site/LibraryPage'
 import { RouteHead } from './components/RouteHead'
 
 export default function App() {
@@ -33,6 +34,7 @@ export default function App() {
           <Route path="/spells/money" element={<SpellPage kind="money" />} />
           <Route path="/press" element={<PressIndex />} />
           <Route path="/press/:slug" element={<PressRelease />} />
+          <Route path="/library" element={<LibraryPage />} />
           <Route path="*" element={inIframe ? <Home /> : <SiteHome />} />
         </Routes>
       </SiteLayout>

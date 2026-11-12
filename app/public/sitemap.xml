@@ -11,6 +11,7 @@
   <url><loc>https://cunning-man.vercel.app/spells/love</loc><priority>0.7</priority></url>
   <url><loc>https://cunning-man.vercel.app/spells/money</loc><priority>0.7</priority></url>
   <url><loc>https://cunning-man.vercel.app/press</loc><priority>0.6</priority></url>
+  <url><loc>https://cunning-man.vercel.app/library</loc><priority>0.6</priority></url>
   <url><loc>https://cunning-man.vercel.app/press/launch</loc><priority>0.5</priority></url>
   <url><loc>https://cunning-man.vercel.app/press/trading-clock</loc><priority>0.5</priority></url>
   <url><loc>https://cunning-man.vercel.app/press/synastry-meter</loc><priority>0.5</priority></url>
