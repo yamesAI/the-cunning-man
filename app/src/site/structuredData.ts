@@ -11,6 +11,10 @@ import {
   LIBRARY_BOOKS, LIBRARY_DESCRIPTION, LIBRARY_PATH, LIBRARY_TERMS, LIBRARY_TITLE, TERM_SET_NAME,
   type FacetCode,
 } from "./library";
+import {
+  DIGNITIES_DESCRIPTION, DIGNITIES_PATH, DIGNITIES_TITLE, DIGNITY_TERMS, LILLY_SOURCE, PLANET_CATALOGS, signDignities,
+} from "./dignities";
+import { PLANET_LABEL, SIGN_LABEL } from "../astro/constants";
 
 export const SITE_ORIGIN = "https://cunning-man.vercel.app";
 export const SITE_NAME = "The Cunning Man";
@@ -144,6 +148,97 @@ function libraryPage(): Json {
   };
 }
 
+// DIGNITIES-001 §4 (D-4, D-6): /dignities is a WebPage (not WebApplication,
+// CollectionPage or Library). hasPart: three DefinedTermSets (planets, signs,
+// essential dignities) and one CreativeWork per Lilly planet chapter. Each
+// chapter section is about its planet term and mentions Occupation (name +
+// description only), DayOfWeek, Country/City (name + description only) and the
+// other planet terms it names as friends or enemies. Herbs, beasts, stones,
+// sicknesses, angels, colours and the rest stay visible text only.
+const DIG_URL = absUrl(DIGNITIES_PATH);
+const LILLY_BOOK: Json = {
+  "@type": "Book",
+  name: LILLY_SOURCE.title,
+  author: { "@type": "Person", name: LILLY_SOURCE.author },
+  datePublished: String(LILLY_SOURCE.year),
+  url: LILLY_SOURCE.url,
+};
+const DIG_PAGE_REF: Json = { "@type": "WebPage", name: DIGNITIES_TITLE, url: DIG_URL };
+const DIG_SETS = {
+  planets: { "@type": "DefinedTermSet", name: "Classical planets", url: `${DIG_URL}#planets` },
+  signs: { "@type": "DefinedTermSet", name: "Zodiac signs", url: `${DIG_URL}#dignities` },
+  dignities: { "@type": "DefinedTermSet", name: "Essential dignities", url: `${DIG_URL}#dignity-terms` },
+};
+
+function planetRef(key: string): Json {
+  return { "@type": "DefinedTerm", name: PLANET_LABEL[key as keyof typeof PLANET_LABEL], termCode: key, url: `${DIG_URL}#${key}` };
+}
+
+function termSet(set: Json, about: string, terms: Json[]): Json {
+  return {
+    ...set,
+    inLanguage: "en",
+    isAccessibleForFree: true,
+    isPartOf: DIG_PAGE_REF,
+    about,
+    isBasedOn: LILLY_BOOK,
+    hasDefinedTerm: terms.map((t) => ({ "@type": "DefinedTerm", ...t, inDefinedTermSet: set })),
+  };
+}
+
+function dignitiesPage(): Json {
+  const planets = termSet(DIG_SETS.planets, "The seven traditional planets", PLANET_CATALOGS.map((c) => ({
+    name: c.name,
+    alternateName: c.alternateName,
+    description: `The planet ${c.name} as Lilly describes it in Christian Astrology (1647), Book 1, ${c.pages}.`,
+    termCode: c.key,
+    url: `${DIG_URL}#${c.key}`,
+  })));
+  const signs = termSet(DIG_SETS.signs, "The twelve signs of the zodiac", signDignities().map((r) => ({
+    name: SIGN_LABEL[r.sign],
+    description: [
+      `House of ${PLANET_LABEL[r.house]}`,
+      r.exaltation ? `exaltation of ${PLANET_LABEL[r.exaltation.planet]} (${r.exaltation.degree}°)` : null,
+      `${r.element} triplicity, ruled by ${PLANET_LABEL[r.triplicity.day]} by day and ${PLANET_LABEL[r.triplicity.night]} by night`,
+      `detriment of ${PLANET_LABEL[r.detriment]}`,
+      r.fall ? `fall of ${PLANET_LABEL[r.fall]}` : null,
+    ].filter(Boolean).join("; ") + ".",
+    termCode: r.sign,
+    url: `${DIG_URL}#sign-${r.sign}`,
+  })));
+  const dignities = termSet(DIG_SETS.dignities, "Essential dignities and debilities", DIGNITY_TERMS.map((t) => ({
+    name: t.name,
+    description: t.definition,
+    termCode: t.code,
+    url: `${DIG_URL}#dignity-${t.code}`,
+  })));
+  const sections: Json[] = PLANET_CATALOGS.map((c) => {
+    const where = `under ${c.name} in Lilly, Christian Astrology (1647), Book 1, ${c.pages}; a historical signification for study`;
+    return {
+      "@type": "CreativeWork",
+      name: `${c.name}: significations (Lilly, Christian Astrology, 1647)`,
+      url: `${DIG_URL}#${c.key}`,
+      inLanguage: "en",
+      isPartOf: DIG_PAGE_REF,
+      isBasedOn: LILLY_BOOK,
+      about: planetRef(c.key),
+      mentions: [
+        { "@type": "DayOfWeek", "@id": `https://schema.org/${c.day}`, name: c.day },
+        ...c.occupations.map((name) => ({ "@type": "Occupation", name, description: `Named ${where}.` })),
+        ...c.places.map((p) => ({ "@type": p.type, name: p.name, description: `Listed ${where}.` })),
+        ...[...new Set([...c.friends, ...c.enemies])].map(planetRef),
+      ],
+    };
+  });
+  return {
+    ...base("WebPage", DIGNITIES_PATH, DIGNITIES_TITLE, DIGNITIES_DESCRIPTION),
+    isAccessibleForFree: true,
+    about: PLANET_CATALOGS.map((c) => planetRef(c.key)),
+    isBasedOn: LILLY_BOOK,
+    hasPart: [planets, signs, dignities, ...sections],
+  };
+}
+
 /** Exact known static paths -> JSON-LD. Lower-case, no trailing slash. */
 const STATIC: Record<string, () => Json> = {
   "/": () => ({
@@ -235,6 +330,7 @@ const STATIC: Record<string, () => Json> = {
     },
   }),
   [LIBRARY_PATH]: libraryPage,
+  [DIGNITIES_PATH]: dignitiesPage,
 };
 
 /** Normalise a location pathname for lookup: strip trailing slashes. */
