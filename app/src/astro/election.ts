@@ -98,8 +98,7 @@ function aspectPts(planet: PlanetKey, angle: number): { label: string; pts: numb
     mars: { 0: -7, 90: -7, 180: -7, 120: -1, 60: -1 },
   };
   const pts = TABLE[planet]?.[angle] ?? 0;
-  const tag = planet === "mercury" ? " (trade)" : "";
-  return { label: `Moon applying ${name} ${PLANET_LABEL[planet]}${tag}`, pts };
+  return { label: `Moon applying ${name} ${PLANET_LABEL[planet]}`, pts };
 }
 
 interface Snap {
@@ -168,7 +167,7 @@ function scoreSnap(
   const ang = (p: PlanetKey) => houses.get(p) === 1 || houses.get(p) === 10;
   if (ang("jupiter")) add("Jupiter angular (1st/10th)", 5);
   if (ang("venus")) add("Venus angular (1st/10th)", 5);
-  if (ang("mercury")) add("Mercury angular (trade)", 3);
+  if (ang("mercury")) add("Mercury angular (1st/10th)", 3);
   if (ang("saturn")) add("Saturn angular", -4);
   if (ang("mars")) add("Mars angular", -4);
 
