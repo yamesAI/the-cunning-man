@@ -2,8 +2,35 @@
 // Accurate to ~1-2 minutes, plenty for planetary hours.
 // Takes the civil date explicitly (year, 0-indexed month, day) as observed
 // at the location, so results are independent of the system timezone.
+//
+// The raw Almanac UT can fall outside [0, 24). Wrapping it into that range
+// and attaching it to Date.UTC of the requested civil Y-M-D puts the event
+// on the wrong local day at most longitudes away from Greenwich (QC-SKY-001
+// H-1). We leave UT unwrapped and then keep the neighbouring-date event
+// whose wall date in the location's zone equals the requested civil date.
+
+import tzlookup from "tz-lookup";
+import { wallParts } from "./format";
 
 const ZENITH = 90.833;
+
+function tzFor(lat: number, lng: number): string {
+  try {
+    return tzlookup(lat, lng);
+  } catch {
+    return "UTC";
+  }
+}
+
+function addCivilDays(year: number, month0: number, day: number, delta: number): { year: number; month: number; day: number } {
+  const d = new Date(Date.UTC(year, month0, day + delta));
+  return { year: d.getUTCFullYear(), month: d.getUTCMonth(), day: d.getUTCDate() };
+}
+
+function onCivilDate(date: Date, year: number, month0: number, day: number, tz: string): boolean {
+  const w = wallParts(date, tz);
+  return w.year === year && w.month === month0 && w.day === day;
+}
 
 function calc(year: number, month0: number, day: number, lat: number, lng: number, rising: boolean): Date | null {
   const dayOfYear = Math.floor(
@@ -37,24 +64,47 @@ function calc(year: number, month0: number, day: number, lat: number, lng: numbe
   H /= 15;
 
   const T = H + RA - 0.06571 * t - 6.622;
-  let UT = T - lngHour;
-  UT = ((UT % 24) + 24) % 24;
+  const UT = T - lngHour;
+  // Leave UT unwrapped: Date.UTC + UT hours already lands on the correct UTC day.
+  return new Date(Date.UTC(year, month0, day) + UT * 3600000);
+}
 
-  const utcMs = Date.UTC(year, month0, day) + UT * 3600000;
-  return new Date(utcMs);
+/** The Almanac event whose wall date in `tz` is the requested civil date, or null. */
+function eventOnCivilDate(
+  year: number,
+  month0: number,
+  day: number,
+  lat: number,
+  lng: number,
+  rising: boolean,
+  tz: string,
+): Date | null {
+  // Prefer the requested date, then neighbours; prefer an unshifted UT, then ±24/48 h.
+  // The shifts cover UT values that land a day off, including at year boundaries.
+  for (const delta of [0, -1, 1]) {
+    const d = addCivilDays(year, month0, day, delta);
+    const ev = calc(d.year, d.month, d.day, lat, lng, rising);
+    if (!ev) continue;
+    for (const shiftH of [0, -24, 24, -48, 48]) {
+      const cand = new Date(ev.getTime() + shiftH * 3600000);
+      if (onCivilDate(cand, year, month0, day, tz)) return cand;
+    }
+  }
+  return null;
 }
 
 export interface SunEvents {
   sunrise: Date | null;
   sunset: Date | null;
-  nextSunrise: Date | null; // sunrise of the following civil day
+  nextSunrise: Date | null; // sunrise of the following civil date at the location
 }
 
 export function sunEvents(year: number, month0: number, day: number, lat: number, lng: number): SunEvents {
-  const next = new Date(Date.UTC(year, month0, day) + 86400000);
+  const tz = tzFor(lat, lng);
+  const next = addCivilDays(year, month0, day, 1);
   return {
-    sunrise: calc(year, month0, day, lat, lng, true),
-    sunset: calc(year, month0, day, lat, lng, false),
-    nextSunrise: calc(next.getUTCFullYear(), next.getUTCMonth(), next.getUTCDate(), lat, lng, true),
+    sunrise: eventOnCivilDate(year, month0, day, lat, lng, true, tz),
+    sunset: eventOnCivilDate(year, month0, day, lat, lng, false, tz),
+    nextSunrise: eventOnCivilDate(next.year, next.month, next.day, lat, lng, true, tz),
   };
 }
