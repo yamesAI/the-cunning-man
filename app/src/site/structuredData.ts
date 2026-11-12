@@ -1,8 +1,8 @@
 // Route structured data (schema.org JSON-LD) and canonical URLs — SCHEMA-001 §3.
 // One place for every route so url, canonical and @type stay in step.
 // Rules: no Offer / price / MonetaryAmount anywhere (free tools use
-// isAccessibleForFree); press items are Article, not NewsArticle; the
-// "trading-clock" release stays untyped; unknown paths and slugs get no
+// isAccessibleForFree); press items, including trading-clock, are Article,
+// not NewsArticle (owner 2026-11-12 09:05). Unknown paths and slugs get no
 // route JSON-LD. No publisher/creator. Visible disclaimers live in the page,
 // not here (schema.org has no disclaimer property).
 
@@ -10,9 +10,6 @@ import { PRESS } from "./press";
 
 export const SITE_ORIGIN = "https://cunning-man.vercel.app";
 export const SITE_NAME = "The Cunning Man";
-
-/** Press slugs that are listed but never typed (CEO ruling, SCHEMA-001 decision 3). */
-export const UNTYPED_PRESS_SLUGS: ReadonlySet<string> = new Set(["trading-clock"]);
 
 type Json = Record<string, unknown>;
 
@@ -177,7 +174,7 @@ function norm(pathname: string): string {
 export interface RouteHead {
   /** Absolute canonical URL for the content this path renders. */
   canonical: string;
-  /** Route JSON-LD, or null when the path is unknown or deliberately untyped. */
+  /** Route JSON-LD, or null when the path or slug is unknown. */
   jsonLd: Json | null;
 }
 
@@ -196,7 +193,6 @@ export function routeHead(pathname: string): RouteHead {
       return { canonical: absUrl(`/press/${PRESS[0].slug}`), jsonLd: null };
     }
     const canonical = absUrl(`/press/${item.slug}`);
-    if (UNTYPED_PRESS_SLUGS.has(item.slug)) return { canonical, jsonLd: null };
     const date = isoDate(item.date);
     return {
       canonical,

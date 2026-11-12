@@ -1,4 +1,4 @@
-// Check: route structured data and canonicals (SCHEMA-001 §3 + CEO rulings 2026-11-12 08:54).
+// Check: route structured data and canonicals (SCHEMA-001 §3 + CEO rulings 2026-11-12 08:54, owner 09:05).
 // Run: npm run check:schema   (optionally: BUNDLE_DIR=<vite outDir> to also scan a built bundle)
 
 import { readFileSync, readdirSync, existsSync } from "node:fs";
@@ -91,16 +91,12 @@ items.forEach((it, i) => {
   assert(it.url === absUrl(`/press/${PRESS[i].slug}`) && it.name === PRESS[i].title, `/press item ${i}: url + name`);
 });
 
-// /press/:slug -> Article (not NewsArticle); trading-clock untyped (3.)
+// /press/:slug -> Article (not NewsArticle), including trading-clock (owner 2026-11-12 09:05)
 for (const p of PRESS) {
   const path = `/press/${p.slug}`;
   const h = routeHead(path);
   assert(h.canonical === absUrl(path), `${path}: canonical per slug`);
   canonicals.add(h.canonical);
-  if (p.slug === "trading-clock") {
-    assert(h.jsonLd === null, `${path}: no JSON-LD (untyped)`);
-    continue;
-  }
   const ld = h.jsonLd!;
   assert(ld && ld["@type"] === "Article", `${path}: Article`);
   assert(ld.headline === p.title && ld.description === p.excerpt, `${path}: headline + description`);
