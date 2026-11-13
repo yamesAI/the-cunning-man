@@ -9,7 +9,7 @@
 import { PRESS } from "./press";
 import {
   LIBRARY_BOOKS, LIBRARY_DESCRIPTION, LIBRARY_PATH, LIBRARY_TERMS, LIBRARY_TITLE, TERM_SET_NAME,
-  type FacetCode,
+  bookFromPath, bookPageDescription, bookPageName, bookPath, type FacetCode, type LibraryBook,
 } from "./library";
 import {
   DIGNITIES_DESCRIPTION, DIGNITIES_PATH, DIGNITIES_TITLE, DIGNITY_TERMS, LILLY_SOURCE, PLANET_CATALOGS,
@@ -110,6 +110,44 @@ function termRef(code: FacetCode): Json {
   return { "@type": "DefinedTerm", name: t.name, termCode: t.code, url: termUrl(t.code) };
 }
 
+function libraryBookNode(b: LibraryBook): Json {
+  return {
+    "@type": "Book",
+    "@id": `${LIBRARY_URL}#${b.id}`,
+    name: b.title,
+    description: b.note,
+    url: b.url,
+    inLanguage: "en",
+    isAccessibleForFree: true,
+    keywords: termRef(b.facet),
+    author: { "@type": "Person", name: b.author },
+    ...(b.translator ? { translator: { "@type": "Person", name: b.translator } } : {}),
+    datePublished: String(b.year),
+  };
+}
+
+function libraryBookPage(b: LibraryBook): Json {
+  const path = bookPath(b.id);
+  const url = absUrl(path);
+  const book = libraryBookNode(b);
+  return {
+    ...base("WebPage", path, bookPageName(b.title), bookPageDescription(b)),
+    isAccessibleForFree: true,
+    isBasedOn: book,
+    about: book,
+    mainEntity: book,
+    breadcrumb: {
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: SITE_NAME, item: `${SITE_ORIGIN}/` },
+        { "@type": "ListItem", position: 2, name: "Library", item: LIBRARY_URL },
+        { "@type": "ListItem", position: 3, name: b.title, item: url },
+      ],
+    },
+    relatedLink: LIBRARY_BOOKS.filter((x) => x.id !== b.id).map((x) => absUrl(bookPath(x.id))),
+  };
+}
+
 function libraryPage(): Json {
   return {
     ...base("CollectionPage", LIBRARY_PATH, LIBRARY_TITLE, LIBRARY_DESCRIPTION),
@@ -120,18 +158,7 @@ function libraryPage(): Json {
       itemListElement: LIBRARY_BOOKS.map((b, i) => ({
         "@type": "ListItem",
         position: i + 1,
-        item: {
-          "@type": "Book",
-          name: b.title,
-          description: b.note,
-          url: b.url,
-          inLanguage: "en",
-          isAccessibleForFree: true,
-          keywords: termRef(b.facet),
-          author: { "@type": "Person", name: b.author },
-          ...(b.translator ? { translator: { "@type": "Person", name: b.translator } } : {}),
-          datePublished: String(b.year),
-        },
+        item: libraryBookNode(b),
       })),
     },
     hasPart: {
@@ -441,6 +468,15 @@ function routeHeadRaw(pathname: string): RouteHead {
     if (!catalog) return { canonical: absUrl(DIGNITIES_PATH), jsonLd: null };
     const path = planetPath(catalog.key);
     return { canonical: absUrl(path), jsonLd: planetPageGraph(catalog) };
+  }
+
+  // HUB-PAGES-001 library: exact lowercase /library/<id> only. Any other child
+  // path is a miss: no JSON-LD, canonical stays on the index.
+  if (/^\/library\//i.test(p)) {
+    const book = bookFromPath(p);
+    if (!book) return { canonical: absUrl(LIBRARY_PATH), jsonLd: null };
+    const path = bookPath(book.id);
+    return { canonical: absUrl(path), jsonLd: libraryBookPage(book) };
   }
 
   // Unknown path: the catch-all renders the home content; canonical is the

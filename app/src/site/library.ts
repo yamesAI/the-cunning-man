@@ -1,7 +1,8 @@
 // Library catalog (LIB-001 v0, CEO D-1–D-5 2026-11-12 10:25).
 // A study collection, not a lending library. v0 lists only the four historical
 // works the hub already cites in data/tradition.ts, as metadata-only entries
-// with the same verification URLs. No full text is hosted here. Not press
+// with the same verification URLs. Child routes /library/<id> reopen LIB-001 D-5
+// (HUB-PAGES-001 D-1). No full text is hosted here. Not press
 // items (D-4); "AI vs the Sky" stays the footer download, not a catalog item
 // (D-2). Lives in src/site/, never src/lib/ (D-1).
 
@@ -11,6 +12,19 @@ export const LIBRARY_SUBTITLE =
   "A study collection of the old sources behind these arts, not a lending library. Each item links out to a public-domain source; no full text is hosted here.";
 export const LIBRARY_DESCRIPTION =
   "A study collection of the historical astrology books cited on The Cunning Man, listed by title, author and year with links to public-domain sources. For entertainment and study.";
+
+export function bookPath(id: string): string {
+  return `${LIBRARY_PATH}/${id}`;
+}
+
+export function bookPageName(title: string): string {
+  return `The Cunning Man — ${title}`;
+}
+
+export function bookPageDescription(b: Pick<LibraryBook, "title" | "author" | "translator" | "yearLabel">): string {
+  const by = b.translator ? `${b.author}, trans. ${b.translator}` : b.author;
+  return `${b.title} by ${by}, ${b.yearLabel}. A study page in The Cunning Man library, linking to a public-domain source. No full text is hosted here.`;
+}
 
 export type FacetCode = "esoteric" | "exoteric" | "market-study";
 
@@ -44,7 +58,7 @@ export const LIBRARY_TERMS: LibraryTerm[] = [
 ];
 
 export interface LibraryBook {
-  id: string;         // anchor on /library; not a route (no /library/:slug in v0)
+  id: string;         // anchor on /library and slug for /library/<id>
   title: string;      // schema.org Book name
   author: string;     // as named in data/tradition.ts
   translator?: string;
@@ -102,3 +116,10 @@ export const LIBRARY_BOOKS: LibraryBook[] = [
     facet: "esoteric",
   },
 ];
+
+export function bookFromPath(pathname: string): LibraryBook | undefined {
+  const p = pathname.replace(/\/+$/, "") || "/";
+  if (!p.startsWith(`${LIBRARY_PATH}/`)) return undefined;
+  const slug = p.slice(LIBRARY_PATH.length + 1);
+  return LIBRARY_BOOKS.find((b) => b.id === slug);
+}

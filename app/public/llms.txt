@@ -31,6 +31,10 @@ For entertainment and study — not financial, medical, or legal advice.
   the site already cites (Lilly 1647, Ptolemy trans. Ashmand 1822, Ramesey 1653, Bonatti trans.
   Coley 1676), listed by title, author and year with links to public-domain sources; no full text
   is hosted. Facets: esoteric, exoteric, market-study.
+- /library/christian-astrology — Christian Astrology (Lilly, 1647): a study page in the library, linking to a public-domain source. No full text is hosted.
+- /library/tetrabiblos — Tetrabiblos (Ptolemy, trans. Ashmand, 1822): a study page in the library, linking to a public-domain source. No full text is hosted.
+- /library/astrologia-restaurata — Astrologia Restaurata (Ramesey, 1653): a study page in the library, linking to a public-domain source. No full text is hosted.
+- /library/liber-astronomiae — Liber Astronomiae (146 Considerations) (Bonatti, trans. Coley, 1676): a study page in the library, linking to a public-domain source. No full text is hosted.
 - /dignities — Dignities and Correspondences: a study reference, not a live chart and not advice.
   The essential dignities of the seven traditional planets (house, exaltation, triplicity, terms,
   faces, detriment, fall), and William Lilly's complete Book 1 signification lists for Saturn,

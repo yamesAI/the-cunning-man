@@ -12,6 +12,10 @@
   <url><loc>https://cunning-man.vercel.app/spells/money</loc><priority>0.7</priority></url>
   <url><loc>https://cunning-man.vercel.app/press</loc><priority>0.6</priority></url>
   <url><loc>https://cunning-man.vercel.app/library</loc><priority>0.6</priority></url>
+  <url><loc>https://cunning-man.vercel.app/library/christian-astrology</loc><priority>0.5</priority></url>
+  <url><loc>https://cunning-man.vercel.app/library/tetrabiblos</loc><priority>0.5</priority></url>
+  <url><loc>https://cunning-man.vercel.app/library/astrologia-restaurata</loc><priority>0.5</priority></url>
+  <url><loc>https://cunning-man.vercel.app/library/liber-astronomiae</loc><priority>0.5</priority></url>
   <url><loc>https://cunning-man.vercel.app/dignities</loc><priority>0.6</priority></url>
   <url><loc>https://cunning-man.vercel.app/dignities/saturn</loc><priority>0.5</priority></url>
   <url><loc>https://cunning-man.vercel.app/dignities/jupiter</loc><priority>0.5</priority></url>
