@@ -1,15 +1,17 @@
-// Dignities and Correspondences (DIGNITIES-001 v0): a study reference, not a
-// live chart. Lilly 1647 Book 1 lists for the seven traditional planets plus
-// the essential-dignities table. JSON-LD comes from src/site/structuredData.ts
-// via RouteHead.
+// Dignities and Correspondences (DIGNITIES-001 v0 + DIGNITIES-002): a study
+// reference, not a live chart. Lilly 1647 Book 1 lists for the seven traditional
+// planets plus the essential-dignities table, and one child page per planet.
+// JSON-LD comes from src/site/structuredData.ts via RouteHead.
 
-import { Link } from "react-router";
+import type { ReactNode } from "react";
+import { Link, useLocation } from "react-router";
 import { PLANET_GLYPH, PLANET_LABEL, SIGN_GLYPH, SIGN_LABEL, type PlanetKey, type SignKey } from "@/astro/constants";
 import { LIBRARY_BOOKS } from "@/site/library";
 import {
-  DIGNITIES_DESCRIPTION, DIGNITIES_SUBTITLE, DIGNITIES_TITLE, DIGNITY_TERMS, DISCLAIMER, FURTHER_STUDY_IDS,
-  LATER_BOOK1_POINTERS, LILLY_LABEL, LILLY_SOURCE, LILLY_TABLE_PAGE, LILLY_TABLE_TERMS, PLANET_CATALOGS,
-  signDignities,
+  DIGNITIES_DESCRIPTION, DIGNITIES_PATH, DIGNITIES_SUBTITLE, DIGNITIES_TITLE, DIGNITY_TERMS, DISCLAIMER,
+  FURTHER_STUDY_IDS, LATER_BOOK1_POINTERS, LILLY_LABEL, LILLY_SOURCE, LILLY_TABLE_PAGE, LILLY_TABLE_TERMS,
+  PLANET_CATALOGS, planetFromPath, planetPageDescription, planetPageName, planetPath, signDignities,
+  type PlanetCatalog,
 } from "@/site/dignities";
 import { useMeta } from "@/hooks/useMeta";
 
@@ -38,7 +40,94 @@ const ScanLink = ({ label }: { label: string }) => (
   </a>
 );
 
-export default function DignitiesPage() {
+function CatalogEntries({ catalog }: { catalog: PlanetCatalog }) {
+  return (
+    <dl className="space-y-2 max-w-3xl">
+      {catalog.entries.map((e, i) => (
+        <div key={i} className="border-l-2 border-line pl-3">
+          <dt className="font-bold font-display text-[13px]">
+            {e.heading} <span className="font-normal text-ink-soft text-[11px]">p. {e.page}</span>
+          </dt>
+          <dd className="text-[13px]">
+            {e.historical ? (
+              <span className="block text-[11px] italic text-ink-soft">
+                Historical practice as Lilly reports it; study text, not instructions.
+              </span>
+            ) : null}
+            {e.text}
+            {e.sickness ? <span className="block text-[11px] italic text-ink-soft">{DISCLAIMER}</span> : null}
+          </dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function DignitiesChrome({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div>
+      <h1 className="text-3xl font-bold mb-1 font-smallcaps">{title}</h1>
+      <p className="text-[14px] text-ink-soft max-w-3xl mb-2">{DIGNITIES_SUBTITLE}</p>
+      <p className="text-[12px] italic text-ink-soft max-w-3xl mb-4">{DISCLAIMER}</p>
+      {children}
+    </div>
+  );
+}
+
+function PlanetMiss() {
+  useMeta(DIGNITIES_TITLE, DIGNITIES_DESCRIPTION);
+  return (
+    <DignitiesChrome title={`♄ ${DIGNITIES_TITLE}`}>
+      <p className="text-[13px] max-w-3xl mb-4">This planet page was not found.</p>
+      <p className="text-[13px]">
+        <Link to={DIGNITIES_PATH} className="underline">Back to Dignities and Correspondences</Link>
+      </p>
+    </DignitiesChrome>
+  );
+}
+
+function PlanetPage({ catalog }: { catalog: PlanetCatalog }) {
+  useMeta(planetPageName(catalog.name), planetPageDescription(catalog));
+  const siblings = PLANET_CATALOGS.filter((p) => p.key !== catalog.key);
+  return (
+    <div>
+      <nav aria-label="Breadcrumb" className="text-[13px] mb-4">
+        <ol className="flex flex-wrap gap-x-2">
+          <li><Link to="/" className="underline">The Cunning Man</Link> <span aria-hidden="true">›</span></li>
+          <li>
+            <Link to={DIGNITIES_PATH} className="underline">Dignities and Correspondences</Link>{" "}
+            <span aria-hidden="true">›</span>
+          </li>
+          <li aria-current="page">{catalog.name}</li>
+        </ol>
+      </nav>
+      <h1 className="text-3xl font-bold mb-1 font-smallcaps">
+        {PLANET_GLYPH[catalog.key]} {catalog.name}
+      </h1>
+      <p className="text-[14px] text-ink-soft max-w-3xl mb-2">{planetPageDescription(catalog)}</p>
+      <p className="text-[12px] italic text-ink-soft max-w-3xl mb-4">{DISCLAIMER}</p>
+      <p className="text-[13px] mb-4">
+        <Link to={DIGNITIES_PATH} className="underline">Back to Dignities and Correspondences</Link>
+      </p>
+      <p className="text-[13px] max-w-3xl mb-4 border border-line bg-card p-3">
+        Source: {LILLY_LABEL}, Book 1, <cite className="not-italic">{catalog.chapter}</cite>, {catalog.pages} —{" "}
+        <ScanLink label="read the public-domain scan" />. The lists below are transcribed from that scan, with the
+        printed page for each heading. Spelling is kept as printed; the long s is modernized and astrological symbols
+        are written out. Sickness and body-part notes, and the old notes on gathering herbs, are historical study
+        text only.
+      </p>
+      <p className="text-[12px] text-ink-soft mb-3">Also called: {catalog.alternateName.join(", ")}.</p>
+      <CatalogEntries catalog={catalog} />
+      <nav aria-label="Other planets" className="text-[13px] mt-8 flex flex-wrap gap-x-3 gap-y-1">
+        {siblings.map((p) => (
+          <Link key={p.key} to={planetPath(p.key)} className="underline">{p.name}</Link>
+        ))}
+      </nav>
+    </div>
+  );
+}
+
+function DignitiesIndex() {
   useMeta(DIGNITIES_TITLE, DIGNITIES_DESCRIPTION);
   const rows = signDignities();
   const further = LIBRARY_BOOKS.filter((b) => FURTHER_STUDY_IDS.includes(b.id));
@@ -56,7 +145,7 @@ export default function DignitiesPage() {
       <nav aria-label="On this page" className="text-[13px] mb-6 flex flex-wrap gap-x-3 gap-y-1">
         <a href="#dignities" className="underline">Essential dignities</a>
         {PLANET_CATALOGS.map((c) => (
-          <a key={c.key} href={`#${c.key}`} className="underline">{c.name}</a>
+          <Link key={c.key} to={planetPath(c.key)} className="underline">{c.name}</Link>
         ))}
         <a href="#later-book-1" className="underline">Dragon and colours</a>
         <a href="#further-study" className="underline">Further study</a>
@@ -142,30 +231,15 @@ export default function DignitiesPage() {
       {PLANET_CATALOGS.map((c) => (
         <section key={c.key} id={c.key} aria-labelledby={`${c.key}-h`} className="mb-10">
           <h2 id={`${c.key}-h`} className="text-xl font-bold font-smallcaps">
-            {PLANET_GLYPH[c.key]} {c.name}
+            <Link to={planetPath(c.key)} className="underline hover:text-seal">
+              {PLANET_GLYPH[c.key]} {c.name}
+            </Link>
           </h2>
           <p className="text-[12px] text-ink-soft mb-1">
             {LILLY_LABEL}, Book 1, <cite className="not-italic">{c.chapter}</cite>, {c.pages} — <ScanLink label="scan" />
           </p>
           <p className="text-[12px] text-ink-soft mb-3">Also called: {c.alternateName.join(", ")}.</p>
-          <dl className="space-y-2 max-w-3xl">
-            {c.entries.map((e, i) => (
-              <div key={i} className="border-l-2 border-line pl-3">
-                <dt className="font-bold font-display text-[13px]">
-                  {e.heading} <span className="font-normal text-ink-soft text-[11px]">p. {e.page}</span>
-                </dt>
-                <dd className="text-[13px]">
-                  {e.historical ? (
-                    <span className="block text-[11px] italic text-ink-soft">
-                      Historical practice as Lilly reports it; study text, not instructions.
-                    </span>
-                  ) : null}
-                  {e.text}
-                  {e.sickness ? <span className="block text-[11px] italic text-ink-soft">{DISCLAIMER}</span> : null}
-                </dd>
-              </div>
-            ))}
-          </dl>
+          <CatalogEntries catalog={c} />
         </section>
       ))}
       </div>
@@ -201,4 +275,13 @@ export default function DignitiesPage() {
       </section>
     </div>
   );
+}
+
+export default function DignitiesPage() {
+  const { pathname } = useLocation();
+  const path = pathname.replace(/\/+$/, "") || "/";
+  if (path === DIGNITIES_PATH) return <DignitiesIndex />;
+  const catalog = planetFromPath(path);
+  if (catalog) return <PlanetPage catalog={catalog} />;
+  return <PlanetMiss />;
 }

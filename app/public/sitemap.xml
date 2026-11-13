@@ -13,6 +13,13 @@
   <url><loc>https://cunning-man.vercel.app/press</loc><priority>0.6</priority></url>
   <url><loc>https://cunning-man.vercel.app/library</loc><priority>0.6</priority></url>
   <url><loc>https://cunning-man.vercel.app/dignities</loc><priority>0.6</priority></url>
+  <url><loc>https://cunning-man.vercel.app/dignities/saturn</loc><priority>0.5</priority></url>
+  <url><loc>https://cunning-man.vercel.app/dignities/jupiter</loc><priority>0.5</priority></url>
+  <url><loc>https://cunning-man.vercel.app/dignities/mars</loc><priority>0.5</priority></url>
+  <url><loc>https://cunning-man.vercel.app/dignities/sun</loc><priority>0.5</priority></url>
+  <url><loc>https://cunning-man.vercel.app/dignities/venus</loc><priority>0.5</priority></url>
+  <url><loc>https://cunning-man.vercel.app/dignities/mercury</loc><priority>0.5</priority></url>
+  <url><loc>https://cunning-man.vercel.app/dignities/moon</loc><priority>0.5</priority></url>
   <url><loc>https://cunning-man.vercel.app/press/launch</loc><priority>0.5</priority></url>
   <url><loc>https://cunning-man.vercel.app/press/trading-clock</loc><priority>0.5</priority></url>
   <url><loc>https://cunning-man.vercel.app/press/synastry-meter</loc><priority>0.5</priority></url>

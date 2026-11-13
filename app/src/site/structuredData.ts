@@ -12,7 +12,8 @@ import {
   type FacetCode,
 } from "./library";
 import {
-  DIGNITIES_DESCRIPTION, DIGNITIES_PATH, DIGNITIES_TITLE, DIGNITY_TERMS, LILLY_SOURCE, PLANET_CATALOGS, signDignities,
+  DIGNITIES_DESCRIPTION, DIGNITIES_PATH, DIGNITIES_TITLE, DIGNITY_TERMS, LILLY_SOURCE, PLANET_CATALOGS,
+  planetFromPath, planetPageDescription, planetPageName, planetPath, signDignities,
 } from "./dignities";
 import { PLANET_LABEL, SIGN_LABEL } from "../astro/constants";
 
@@ -170,8 +171,71 @@ const DIG_SETS = {
   dignities: { "@type": "DefinedTermSet", name: "Essential dignities", url: `${DIG_URL}#dignity-terms` },
 };
 
+type PlanetCat = (typeof PLANET_CATALOGS)[number];
+
 function planetRef(key: string): Json {
-  return { "@type": "DefinedTerm", name: PLANET_LABEL[key as keyof typeof PLANET_LABEL], termCode: key, url: `${DIG_URL}#${key}` };
+  return {
+    "@type": "DefinedTerm",
+    "@id": `${DIG_URL}#${key}`,
+    name: PLANET_LABEL[key as keyof typeof PLANET_LABEL],
+    termCode: key,
+    url: absUrl(planetPath(key)),
+  };
+}
+
+function planetTerm(c: PlanetCat): Json {
+  return {
+    "@type": "DefinedTerm",
+    "@id": `${DIG_URL}#${c.key}`,
+    name: c.name,
+    alternateName: c.alternateName,
+    description: `The planet ${c.name} as Lilly describes it in Christian Astrology (1647), Book 1, ${c.pages}.`,
+    termCode: c.key,
+    url: absUrl(planetPath(c.key)),
+    inDefinedTermSet: DIG_SETS.planets,
+  };
+}
+
+function planetChapter(c: PlanetCat): Json {
+  const where = `under ${c.name} in Lilly, Christian Astrology (1647), Book 1, ${c.pages}; a historical signification for study`;
+  return {
+    "@type": "CreativeWork",
+    name: `${c.name}: significations (Lilly, Christian Astrology, 1647)`,
+    url: absUrl(planetPath(c.key)),
+    inLanguage: "en",
+    isPartOf: DIG_PAGE_REF,
+    isBasedOn: LILLY_BOOK,
+    about: planetRef(c.key),
+    mentions: [
+      { "@type": "DayOfWeek", "@id": `https://schema.org/${c.day}`, name: c.day },
+      ...c.occupations.map((name) => ({ "@type": "Occupation", name, description: `Named ${where}.` })),
+      ...c.places.map((p) => ({ "@type": p.type, name: p.name, description: `Listed ${where}.` })),
+      ...[...new Set([...c.friends, ...c.enemies])].map(planetRef),
+    ],
+  };
+}
+
+function planetPageGraph(c: PlanetCat): Json {
+  const path = planetPath(c.key);
+  const url = absUrl(path);
+  const term = planetTerm(c);
+  return {
+    ...base("WebPage", path, planetPageName(c.name), planetPageDescription(c)),
+    isAccessibleForFree: true,
+    isBasedOn: LILLY_BOOK,
+    about: term,
+    mainEntity: term,
+    breadcrumb: {
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: SITE_NAME, item: `${SITE_ORIGIN}/` },
+        { "@type": "ListItem", position: 2, name: "Dignities and Correspondences", item: DIG_URL },
+        { "@type": "ListItem", position: 3, name: c.name, item: url },
+      ],
+    },
+    relatedLink: PLANET_CATALOGS.filter((x) => x.key !== c.key).map((x) => absUrl(planetPath(x.key))),
+    hasPart: planetChapter(c),
+  };
 }
 
 function termSet(set: Json, about: string, terms: Json[]): Json {
@@ -188,11 +252,12 @@ function termSet(set: Json, about: string, terms: Json[]): Json {
 
 function dignitiesPage(): Json {
   const planets = termSet(DIG_SETS.planets, "The seven traditional planets", PLANET_CATALOGS.map((c) => ({
+    "@id": `${DIG_URL}#${c.key}`,
     name: c.name,
     alternateName: c.alternateName,
     description: `The planet ${c.name} as Lilly describes it in Christian Astrology (1647), Book 1, ${c.pages}.`,
     termCode: c.key,
-    url: `${DIG_URL}#${c.key}`,
+    url: absUrl(planetPath(c.key)),
   })));
   const signs = termSet(DIG_SETS.signs, "The twelve signs of the zodiac", signDignities().map((r) => ({
     name: SIGN_LABEL[r.sign],
@@ -212,24 +277,7 @@ function dignitiesPage(): Json {
     termCode: t.code,
     url: `${DIG_URL}#dignity-${t.code}`,
   })));
-  const sections: Json[] = PLANET_CATALOGS.map((c) => {
-    const where = `under ${c.name} in Lilly, Christian Astrology (1647), Book 1, ${c.pages}; a historical signification for study`;
-    return {
-      "@type": "CreativeWork",
-      name: `${c.name}: significations (Lilly, Christian Astrology, 1647)`,
-      url: `${DIG_URL}#${c.key}`,
-      inLanguage: "en",
-      isPartOf: DIG_PAGE_REF,
-      isBasedOn: LILLY_BOOK,
-      about: planetRef(c.key),
-      mentions: [
-        { "@type": "DayOfWeek", "@id": `https://schema.org/${c.day}`, name: c.day },
-        ...c.occupations.map((name) => ({ "@type": "Occupation", name, description: `Named ${where}.` })),
-        ...c.places.map((p) => ({ "@type": p.type, name: p.name, description: `Listed ${where}.` })),
-        ...[...new Set([...c.friends, ...c.enemies])].map(planetRef),
-      ],
-    };
-  });
+  const sections: Json[] = PLANET_CATALOGS.map(planetChapter);
   return {
     ...base("WebPage", DIGNITIES_PATH, DIGNITIES_TITLE, DIGNITIES_DESCRIPTION),
     isAccessibleForFree: true,
@@ -376,6 +424,15 @@ export function routeHead(pathname: string): RouteHead {
         inLanguage: "en",
       },
     };
+  }
+
+  // DIGNITIES-002: exact lowercase /dignities/<key> only. Any other child
+  // path is a miss: no JSON-LD, canonical stays on the index.
+  if (/^\/dignities\//i.test(p)) {
+    const catalog = planetFromPath(p);
+    if (!catalog) return { canonical: absUrl(DIGNITIES_PATH), jsonLd: null };
+    const path = planetPath(catalog.key);
+    return { canonical: absUrl(path), jsonLd: planetPageGraph(catalog) };
   }
 
   // Unknown path: the catch-all renders the home content; canonical is the

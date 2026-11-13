@@ -9,8 +9,8 @@ import { PRESS } from "../src/site/press";
 import { LIBRARY_BOOKS, LIBRARY_DESCRIPTION, LIBRARY_SUBTITLE, LIBRARY_TERMS } from "../src/site/library";
 import { TESTIMONY } from "../src/data/tradition";
 import {
-  DIGNITIES_DESCRIPTION, DIGNITIES_SUBTITLE, DISCLAIMER, LATER_BOOK1_POINTERS, LILLY_SOURCE, LILLY_TABLE_TERMS,
-  PLANET_CATALOGS, signDignities,
+  DIGNITIES_DESCRIPTION, DIGNITIES_PATH, DIGNITIES_SUBTITLE, DISCLAIMER, LATER_BOOK1_POINTERS, LILLY_SOURCE,
+  LILLY_TABLE_TERMS, PLANET_CATALOGS, planetPageDescription, planetPageName, planetPath, signDignities,
 } from "../src/site/dignities";
 
 let n = 0;
@@ -31,6 +31,7 @@ const ALLOWED_KEYS: Record<string, Set<string>> = { "/sky": new Set(["featureLis
 // LIB-001 §4: /library Books alone may name a historical author/translator as
 // Person (name only; checked exactly below). Everywhere else Person stays forbidden.
 const ALLOWED_TYPES: Record<string, Set<string>> = { "/library": new Set(["Person"]), "/dignities": new Set(["Person"]) };
+for (const c of PLANET_CATALOGS) ALLOWED_TYPES[planetPath(c.key)] = new Set(["Person"]);
 
 function walk(v: unknown, where: string, allow: Set<string> = new Set(), allowTypes: Set<string> = new Set()) {
   if (Array.isArray(v)) return v.forEach((x, i) => walk(x, `${where}[${i}]`, allow, allowTypes));
@@ -273,8 +274,16 @@ items.forEach((it, i) => {
     assert(set.inLanguage === "en" && set.isAccessibleForFree === true && sp["@type"] === "WebPage" && sp.url === DIG_URL, `/dignities set ${set.name}: en, free, isPartOf the page`);
     assert(JSON.stringify(set.isBasedOn) === book && typeof set.about === "string", `/dignities set ${set.name}: about + isBasedOn Lilly`);
     for (const t of set.hasDefinedTerm as Record<string, unknown>[]) {
-      assert(t["@type"] === "DefinedTerm" && Object.keys(t).every((k) => ["@type", "name", "alternateName", "description", "termCode", "url", "inDefinedTermSet"].includes(k)), `/dignities term ${t.name}: DefinedTerm properties only (no mentions/keywords/isAccessibleForFree)`);
-      assert(String(t.url).startsWith(`${DIG_URL}#`) && (t.inDefinedTermSet as Record<string, unknown>).name === set.name, `/dignities term ${t.name}: url anchor + inDefinedTermSet`);
+      const allowed = set.name === "Classical planets"
+        ? ["@type", "@id", "name", "alternateName", "description", "termCode", "url", "inDefinedTermSet"]
+        : ["@type", "name", "alternateName", "description", "termCode", "url", "inDefinedTermSet"];
+      assert(t["@type"] === "DefinedTerm" && Object.keys(t).every((k) => allowed.includes(k)), `/dignities term ${t.name}: DefinedTerm properties only (no mentions/keywords/isAccessibleForFree)`);
+      if (set.name === "Classical planets") {
+        assert(t["@id"] === `${DIG_URL}#${t.termCode}` && t.url === `${DIG_URL}/${t.termCode}`, `/dignities term ${t.name}: stable @id hash, url is the planet page`);
+      } else {
+        assert(String(t.url).startsWith(`${DIG_URL}#`), `/dignities term ${t.name}: url anchor`);
+      }
+      assert((t.inDefinedTermSet as Record<string, unknown>).name === set.name, `/dignities term ${t.name}: inDefinedTermSet`);
     }
   }
   const pTerms = sets[0].hasDefinedTerm as Record<string, unknown>[];
@@ -289,8 +298,8 @@ items.forEach((it, i) => {
     const c = PLANET_CATALOGS[i];
     const where = `/dignities ${c.key}`;
     const visible = c.entries.map((e) => e.text).join(" ");
-    assert(sec.url === `${DIG_URL}#${c.key}` && JSON.stringify(sec.isBasedOn) === book, `${where}: section url + isBasedOn Lilly`);
-    assert(JSON.stringify(sec.about) === JSON.stringify({ "@type": "DefinedTerm", name: c.name, termCode: c.key, url: `${DIG_URL}#${c.key}` }), `${where}: section about the planet term`);
+    assert(sec.url === `${DIG_URL}/${c.key}` && JSON.stringify(sec.isBasedOn) === book, `${where}: section url + isBasedOn Lilly`);
+    assert(JSON.stringify(sec.about) === JSON.stringify({ "@type": "DefinedTerm", "@id": `${DIG_URL}#${c.key}`, name: c.name, termCode: c.key, url: `${DIG_URL}/${c.key}` }), `${where}: section about the planet term`);
     assert(Object.keys(sec).sort().join(",") === "@type,about,inLanguage,isBasedOn,isPartOf,mentions,name,url", `${where}: section properties`);
     const men = sec.mentions as Record<string, unknown>[];
     const days = men.filter((m) => m["@type"] === "DayOfWeek");
@@ -369,14 +378,109 @@ items.forEach((it, i) => {
   assert(createHash("sha256").update(panel).digest("hex") === "9df7257aa3a8fbdc004f97a6404974ea5a1a52b169813ebf0513019c8775f7f0", "/clock DignitiesPanel untouched (D-3)");
   assert(!/site\/dignities/.test(panels) && !/site\/dignities/.test(readFileSync(new URL("../src/astro/traditional.ts", import.meta.url), "utf8")), "clock code does not import the catalog");
   // route, nav and public files
-  assert(/<Route path="\/dignities" element=\{<DignitiesPage \/>\} \/>/.test(readFileSync(new URL("../src/App.tsx", import.meta.url), "utf8")) && !/path="\/dignities\//.test(readFileSync(new URL("../src/App.tsx", import.meta.url), "utf8")), "App.tsx: /dignities only, no /dignities/:slug");
+  const appSrc = readFileSync(new URL("../src/App.tsx", import.meta.url), "utf8");
+  assert(/<Route path="\/dignities" element=\{<DignitiesPage \/>\} \/>/.test(appSrc), "App.tsx: /dignities index route");
+  assert(/<Route path="\/dignities\/:planet" element=\{<DignitiesPage \/>\} \/>/.test(appSrc), "App.tsx: /dignities/:planet child route");
+  assert(appSrc.lastIndexOf('path="*"') > appSrc.lastIndexOf("/dignities/:planet"), "App.tsx: catch-all remains last");
   assert(/\{ to: "\/library", label: "Library" \},\n\s*\{ to: "\/dignities", label: "Dignities" \},/.test(layout), "header nav: Dignities after Library");
+  assert((layout.match(/label: "Dignities"/g) || []).length === 1 && !/to: "\/dignities\//.test(layout), "header nav: one Dignities entry, no per-planet items");
   const sitemap = readFileSync(new URL("../public/sitemap.xml", import.meta.url), "utf8");
   const llms = readFileSync(new URL("../public/llms.txt", import.meta.url), "utf8");
-  assert(sitemap.includes("<loc>https://cunning-man.vercel.app/dignities</loc>") && !/\/dignities\//.test(sitemap), "sitemap: /dignities, no /dignities/:slug");
+  assert(sitemap.includes("<loc>https://cunning-man.vercel.app/dignities</loc>"), "sitemap: /dignities");
+  for (const c of PLANET_CATALOGS) {
+    assert(sitemap.includes(`<loc>https://cunning-man.vercel.app/dignities/${c.key}</loc>`), `sitemap: /dignities/${c.key}`);
+  }
   const digLine = (llms.match(/^- \/dignities — [\s\S]*?(?=\n- |\n## |$)/m) || [""])[0];
   assert(digLine.length > 0 && !BANNED.test(digLine) && !/uranus|neptune|pluto|tarot/i.test(digLine), "llms.txt: /dignities line, clean wording");
+  for (const c of PLANET_CATALOGS) {
+    const re = new RegExp(`^- /dignities/${c.key} — .+`, "m");
+    const line = (llms.match(re) || [""])[0];
+    assert(line.includes(c.name) && /Lilly, Christian Astrology, 1647, Book 1/.test(line) && /study page/.test(line), `llms.txt: /dignities/${c.key}`);
+    assert(!BANNED.test(line) && !/uranus|neptune|pluto|tarot/i.test(line), `llms.txt: /dignities/${c.key} clean wording`);
+  }
 }
+
+// /dignities/:planet (DIGNITIES-002 §4–§7, D-1–D-4): WebPage per traditional planet,
+// backlinks, breadcrumbs, stable term @id, no banned types, no new sources.
+{
+  const DIG_URL = "https://cunning-man.vercel.app/dignities";
+  const indexLd = routeHead(DIGNITIES_PATH).jsonLd!;
+  const indexParts = indexLd.hasPart as Record<string, unknown>[];
+  const indexPlanets = (indexParts.find((x) => x["@type"] === "DefinedTermSet" && x.name === "Classical planets")!.hasDefinedTerm) as Record<string, unknown>[];
+  const lib = LIBRARY_BOOKS.find((b) => b.id === "christian-astrology")!;
+  const book = JSON.stringify({ "@type": "Book", name: lib.title, author: { "@type": "Person", name: lib.author }, datePublished: String(lib.year), url: lib.url });
+  const BANNED = /\btrad(e|es|er|ers|ing)\b|\bentr(y|ies)\b|\bexit|signal|\bbuy\b|\bsell\b|\bedge\b|win rate|profit|ticker|funded|prop[- ]?firm|price|financ|invest|\bcur(e|es|ed|ing)\b|\bdos(e|es|ing|age)\b|remed|prescri|career|\$/i;
+  const pageSrc = readFileSync(new URL("../src/pages/site/DignitiesPage.tsx", import.meta.url), "utf8");
+  const PLANET_TYPES = ["WebPage", "WebSite", "Book", "Person", "DefinedTermSet", "DefinedTerm", "CreativeWork", "Occupation", "DayOfWeek", "Country", "City", "BreadcrumbList", "ListItem"];
+  const BANNED_TYPES = /"(WebApplication|CollectionPage|Library|LibrarySystem|Plant|Animal|Herb|Taxon|Drug|DrugClass|DietarySupplement|Substance|Medical[A-Za-z]*|SuperficialAnatomy|AnatomicalStructure|HowTo|HowToStep|AdministrativeArea|Landform|Cemetery|CivicStructure|LandmarksOrHistoricalBuildings|BodyOfWater|Place|State|Continent|Organization|Offer|MonetaryAmount|PriceSpecification|QuantitativeValue|QualitativeValue|PropertyValue|WeatherForecast|Color|Colour|Mineral|Angel|Deity|Planet|ZodiacSign|Correspondence|Profession|Tarot)"/;
+  const BANNED_PROPS = /"(offers|price|priceCurrency|estimatedSalary|occupationalCategory|address|geo|telephone|relatedTo|knowsAbout|color|publisher|creator|dosage|keywords)"/;
+
+  for (const c of PLANET_CATALOGS) {
+    const path = planetPath(c.key);
+    const h = routeHead(path);
+    assert(h.jsonLd, `${path}: has JSON-LD`);
+    const ld = h.jsonLd!;
+    const text = JSON.stringify(ld);
+    const types = [...text.matchAll(/"@type":"([^"]+)"/g)].map((m) => m[1]);
+    assert(ld["@type"] === "WebPage" && ld.name === planetPageName(c.name), `${path}: WebPage name`);
+    assert(h.canonical === absUrl(path) && ld.url === h.canonical, `${path}: canonical per route`);
+    assert(ld.description === planetPageDescription(c), `${path}: description from the catalog`);
+    assert(ld.isAccessibleForFree === true, `${path}: isAccessibleForFree`);
+    assert(Object.keys(ld).sort().join(",") === "@context,@type,about,breadcrumb,description,hasPart,inLanguage,isAccessibleForFree,isBasedOn,isPartOf,mainEntity,name,relatedLink,url", `${path}: only the §4 page properties`);
+    common(path, ld);
+    const required = ["WebPage", "WebSite", "Book", "Person", "DefinedTermSet", "DefinedTerm", "CreativeWork", "Occupation", "DayOfWeek", "BreadcrumbList", "ListItem"];
+    assert(required.every((t) => types.includes(t)), `${path}: uses the required types`);
+    if (c.places.some((pl) => pl.type === "Country")) assert(types.includes("Country"), `${path}: Country`);
+    if (c.places.some((pl) => pl.type === "City")) assert(types.includes("City"), `${path}: City`);
+    for (const t of new Set(types)) assert(PLANET_TYPES.includes(t), `${path}: allowed @type ${t}`);
+    assert(!BANNED_TYPES.test(text), `${path}: no banned or invented types`);
+    assert(!BANNED_PROPS.test(text), `${path}: no banned properties`);
+    assert(!/uranus|neptune|pluto/i.test(text), `${path}: no modern outer planets`);
+    assert(!/tarot|agrippa|al-biruni|biruni/i.test(text), `${path}: no tarot, Agrippa or Al-Biruni`);
+    assert(JSON.stringify(ld.isBasedOn) === book, `${path}: isBasedOn the Lilly Book`);
+    const persons = [...text.matchAll(/\{"@type":"Person"[^}]*\}/g)].map((m) => m[0]);
+    assert(persons.length > 0 && persons.every((p) => p === `{"@type":"Person","name":"${lib.author}"}`), `${path}: Person only as the cited Book's author, name only`);
+    const term = ld.mainEntity as Record<string, unknown>;
+    assert(JSON.stringify(term) === JSON.stringify(ld.about), `${path}: about and mainEntity are the same DefinedTerm`);
+    assert(term["@type"] === "DefinedTerm" && term["@id"] === `${DIG_URL}#${c.key}` && term.url === absUrl(path) && term.termCode === c.key && term.name === c.name, `${path}: planet DefinedTerm @id and url`);
+    assert(JSON.stringify(term.inDefinedTermSet) === JSON.stringify({ "@type": "DefinedTermSet", name: "Classical planets", url: `${DIG_URL}#planets` }), `${path}: inDefinedTermSet is the Classical planets set`);
+    const indexTerm = indexPlanets.find((t) => t.termCode === c.key)!;
+    assert(indexTerm["@id"] === term["@id"], `${path}: DefinedTerm @id matches the index`);
+    const crumbs = ld.breadcrumb as Record<string, unknown>;
+    const items = crumbs.itemListElement as Record<string, unknown>[];
+    assert(crumbs["@type"] === "BreadcrumbList" && items.length === 3, `${path}: BreadcrumbList of three steps`);
+    assert(items[0]["@type"] === "ListItem" && items[0].position === 1 && items[0].name === "The Cunning Man" && items[0].item === `${SITE_ORIGIN}/`, `${path}: breadcrumb 1`);
+    assert(items[1]["@type"] === "ListItem" && items[1].position === 2 && items[1].name === "Dignities and Correspondences" && items[1].item === DIG_URL, `${path}: breadcrumb 2`);
+    assert(items[2]["@type"] === "ListItem" && items[2].position === 3 && items[2].name === c.name && items[2].item === absUrl(path), `${path}: breadcrumb 3 is this page`);
+    const related = ld.relatedLink as string[];
+    const siblings = PLANET_CATALOGS.filter((x) => x.key !== c.key).map((x) => absUrl(planetPath(x.key)));
+    assert(Array.isArray(related) && related.length === 6 && JSON.stringify(related) === JSON.stringify(siblings), `${path}: relatedLink is the six sibling URLs`);
+    const sec = ld.hasPart as Record<string, unknown>;
+    assert(sec["@type"] === "CreativeWork" && sec.url === absUrl(path) && JSON.stringify(sec.isBasedOn) === book, `${path}: hasPart CreativeWork on this page`);
+    assert(JSON.stringify((sec.isPartOf as Record<string, unknown>).url) === JSON.stringify(DIG_URL) || (sec.isPartOf as Record<string, unknown>).url === DIG_URL, `${path}: chapter isPartOf the /dignities WebPage`);
+    const men = sec.mentions as Record<string, unknown>[];
+    const days = men.filter((m) => m["@type"] === "DayOfWeek");
+    assert(days.length === 1 && days[0]["@id"] === `https://schema.org/${c.day}` && days[0].name === c.day, `${path}: DayOfWeek ${c.day}`);
+    const occ = men.filter((m) => m["@type"] === "Occupation");
+    assert(occ.length === c.occupations.length && occ.every((o) => Object.keys(o).sort().join(",") === "@type,description,name"), `${path}: Occupation name + description only`);
+    const places = men.filter((m) => m["@type"] === "Country" || m["@type"] === "City");
+    assert(places.every((pl) => Object.keys(pl).sort().join(",") === "@type,description,name"), `${path}: Country/City name + description only`);
+    assert(!BANNED.test(text) && !/advice/i.test(text), `${path}: no banned wording in JSON-LD`);
+    assert(JSON.stringify(routeHead(path + "/")) === JSON.stringify(h), `${path}/: trailing slash is the same page`);
+  }
+
+  assert(/aria-label="Breadcrumb"/.test(pageSrc), "planet page: visible breadcrumb trail");
+  assert(/Back to Dignities and Correspondences/.test(pageSrc), "planet page: visible back link to /dignities");
+  assert(/aria-label="Other planets"/.test(pageSrc) && /PLANET_CATALOGS\.filter\(\(p\) => p\.key !== catalog\.key\)/.test(pageSrc), "planet page: visible links to the six siblings");
+  assert(/This planet page was not found/.test(pageSrc), "unknown slug: short miss state");
+  assert(!/SiteHome/.test(pageSrc), "planet miss does not render SiteHome");
+  assert(/planetFromPath/.test(pageSrc) && !/PRESS\[0\]/.test(pageSrc), "unknown slug does not copy the press fallback");
+  assert(!/LATER_BOOK1_POINTERS|FURTHER_STUDY_IDS/.test(pageSrc.slice(pageSrc.indexOf("function PlanetPage"), pageSrc.indexOf("function DignitiesIndex"))), "planet page: no Dragon, colours, or further-study books");
+  const pageLiterals = [...pageSrc.replace(/className="[^"]*"/g, "").matchAll(/>([^<>{}]+)</g)].map((m) => m[1]).join(" ");
+  assert(!BANNED.test(pageLiterals), "planet/miss page literals: no banned wording");
+}
+
+
 
 // /press/:slug -> Article (not NewsArticle), including trading-clock (owner 2026-11-12 09:05)
 for (const p of PRESS) {
@@ -394,16 +498,25 @@ assert(isoDate("September 1, 2026") === "2026-09-01", "isoDate example");
 assert(isoDate("not a date") === null, "isoDate rejects junk");
 
 // 4. unknown paths and slugs: no FAQPage / Article, never another item's block
-for (const path of ["/dignities/saturn", "/dignities/x", "/dignity", "/library/christian-astrology", "/library/x", "/lib", "/nope", "/clock/extra", "/press/nope", "/press/LAUNCH", "/press/launch/x", "/spells", "/spells/other", "/index.html"]) {
+for (const path of ["/dignity", "/library/christian-astrology", "/library/x", "/lib", "/nope", "/clock/extra", "/press/nope", "/press/LAUNCH", "/press/launch/x", "/spells", "/spells/other", "/index.html"]) {
   const h = routeHead(path);
   assert(h.jsonLd === null, `${path}: unknown -> no JSON-LD`);
 }
 assert(routeHead("/press/nope").canonical === absUrl(`/press/${PRESS[0].slug}`), "/press/nope: canonical to fallback content");
 assert(routeHead("/nope").canonical === `${SITE_ORIGIN}/`, "/nope: canonical root");
 
+// DIGNITIES-002 unknown planet slugs: miss, no JSON-LD, canonical /dignities
+for (const path of ["/dignities/x", "/dignities/pluto", "/dignities/uranus", "/dignities/neptune", "/dignities/SATURN", "/dignities/Saturn", "/dignities/saturn/extra", "/dignities/dragon"]) {
+  const h = routeHead(path);
+  assert(h.jsonLd === null, `${path}: unknown planet slug -> no JSON-LD`);
+  assert(h.canonical === absUrl(DIGNITIES_PATH), `${path}: canonical is /dignities`);
+  assert(h.canonical !== `${SITE_ORIGIN}/` && !PLANET_CATALOGS.some((c) => h.canonical === absUrl(planetPath(c.key))), `${path}: not home or another planet`);
+}
+assert(routeHead("/dignities/saturn").jsonLd !== null, "/dignities/saturn is a known planet page");
+
 // App.tsx routes all covered
 const app = readFileSync(new URL("../src/App.tsx", import.meta.url), "utf8");
-const routes = [...app.matchAll(/path="([^"]+)"/g)].map((m) => m[1]).filter((r) => r !== "*" && r !== "/press/:slug");
+const routes = [...app.matchAll(/path="([^"]+)"/g)].map((m) => m[1]).filter((r) => r !== "*" && r !== "/press/:slug" && r !== "/dignities/:planet" && r !== "/dignities/*");
 for (const r of routes) assert(EXPECT[r], `App route ${r} has expected structured data`);
 
 // 6. source: index.html WebSite kept, no price fields; no page-level JSON-LD outside the table
