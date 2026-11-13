@@ -24,6 +24,18 @@ export const LILLY_SOURCE = { title: lilly.title, author: lilly.author, year: li
 export const LILLY_LABEL = "Lilly, Christian Astrology, 1647";
 export const LILLY_TABLE_PAGE = 104;
 
+export function planetPath(key: string): string {
+  return `${DIGNITIES_PATH}/${key}`;
+}
+
+export function planetPageName(name: string): string {
+  return `The Cunning Man — ${name}`;
+}
+
+export function planetPageDescription(c: Pick<PlanetCatalog, "name" | "chapter" | "pages">): string {
+  return `${c.name} as Lilly describes it in Christian Astrology (1647), Book 1, ${c.chapter}, ${c.pages}.`;
+}
+
 export type DayOfWeekName = "Sunday" | "Monday" | "Tuesday" | "Wednesday" | "Thursday" | "Friday" | "Saturday";
 
 export interface CatalogEntry {
@@ -56,7 +68,7 @@ export interface PlanetCatalog {
 const TERMS_FACE = (page: number, text?: string): CatalogEntry => ({
   heading: "Terms and face",
   page,
-  text: text ?? "The chapter prints the degrees of each sign that are this planet's terms and face; they follow Lilly's own table of essential dignities (p. 104), shown in the dignity tables on this page; the chapter's degree lists are not repeated here.",
+  text: text ?? "The chapter prints the degrees of each sign that are this planet's terms and face; they follow Lilly's own table of essential dignities (p. 104), shown in the dignity tables on the Dignities page (/dignities); the chapter's degree lists are not repeated here.",
 });
 
 const SATURN: PlanetCatalog = {
@@ -87,7 +99,7 @@ const SATURN: PlanetCatalog = {
     { heading: "Latitude", page: 57, text: "His greatest North latitude from the Ecliptick is two degrees 48 minutes; his South latitude from the Ecliptick is two degrees 49 minutes; and more then this he hath not." },
     { heading: "Houses", page: 57, text: "In the Zodiack he hath two of the twelve Signs for his Houses, viz. Capricorne his Night-house, Aquarius his Day-house; he is Exaltated in Libra, he receives his Fall in Aries; he rejoyceth in the Signe Aquarius." },
     { heading: "Triplicity", page: 57, text: "He governeth the Aiery Triplicity by day, which is composed of these Signes, Gemini, Libra, Aquarius." },
-    TERMS_FACE(57, "The chapter prints the degrees of each sign that are his terms (p. 57) and his face or decanate (p. 58); they follow Lilly's own table of essential dignities (p. 104), shown in the dignity tables on this page; the chapter's degree lists are not repeated here. Lilly adds: \"The meaning whereof is, that if Saturn in any Question be in any of these degrees wherein he hath a Terme, he cannot be said to be peregrine, or void of essentiall dignities; or if he be in any of those degrees alotted him for his Face or Decanate, he cannot then be said to be peregrine: understand this in all the other Planets.\""),
+    TERMS_FACE(57, "The chapter prints the degrees of each sign that are his terms (p. 57) and his face or decanate (p. 58); they follow Lilly's own table of essential dignities (p. 104), shown in the dignity tables on the Dignities page (/dignities); the chapter's degree lists are not repeated here. Lilly adds: \"The meaning whereof is, that if Saturn in any Question be in any of these degrees wherein he hath a Terme, he cannot be said to be peregrine, or void of essentiall dignities; or if he be in any of those degrees alotted him for his Face or Decanate, he cannot then be said to be peregrine: understand this in all the other Planets.\""),
     { heading: "Nature", page: 58, text: "He is a Diurnall Planet, Cold and Dry (being farre removed from the heat of the Sun) and moyst Vapours, Melancholick, Earthly, Masculine, the greater Infortune, author of Solitarinesse, Malevolent, &c." },
     { heading: "Manners and actions when well dignified", page: 58, text: "Then he is profound in Imagination, in his Acts severe, in words reserved, in speaking and giving very spare, in labour patient, in arguing or disputing grave, in obtaining the goods of this life studious and solicitous, in all manner of actions austere." },
     { heading: "When ill", page: 58, text: "Then he is envious, covetous, jealous and mistrustfull, timorous, sordid, outwardly dissembling, sluggish, suspitious, stubborne, a contemner of women, a close lyar, malicious, murmuring, never contented, ever repining." },
@@ -202,7 +214,7 @@ const MARS: PlanetCatalog = {
     { heading: "Latitude", page: 65, text: "His greatest latitude North is 4° 31′. his South is 6 degr. and 47." },
     { heading: "Houses", page: 65, text: "He hath Aries for his Day-house, and Scorpio for his Night-house; he is exalted in 28 degr. of Capricorn, and is depressed in 28 Cancer, he receiveth detriment in Libra and Taurus." },
     { heading: "Triplicity", page: 65, text: "He governeth wholly the Watry Triplicity, viz. Cancer, Scorpio, Pisces." },
-    TERMS_FACE(66, "In the whole twelve Signs, Ptolomy assigneth him degrees for his Termes, and degrees for his Face (pp. 65–66); they follow Lilly's own table of essential dignities (p. 104), shown in the dignity tables on this page; the chapter's degree lists are not repeated here."),
+    TERMS_FACE(66, "In the whole twelve Signs, Ptolomy assigneth him degrees for his Termes, and degrees for his Face (pp. 65–66); they follow Lilly's own table of essential dignities (p. 104), shown in the dignity tables on the Dignities page (/dignities); the chapter's degree lists are not repeated here."),
     { heading: "Nature", page: 66, text: "He is a Masculine, Nocturnall Planet, in nature hot and dry, cholerick and fiery, the lesser Infortune, author of Quarrels, Strifes, Contentions." },
     { heading: "Manners when well dignified", page: 66, text: "In feats of Warre and Courage invincible, scorning any should exceed him, subject to no Reason; Bold, Confident, Immoveable, Contentious, challenging all Honour to themselves, Valiant, lovers of Warre and things pertaining thereunto, hazarding himselfe to all Perils, willingly will obey no body, or submit to any; a large Reporter of his owne Acts, one that slights all things in comparison of Victory, and yet of prudent behaviour in his owne affaires." },
     { heading: "When ill placed", page: 66, text: "Then he is a Pratler without modesty or honesty, a lover of Slaughter and Quarrels, Murder, Theevery, a promoter of Sedition, Frayes and Commotions, an Highway-Theefe, as wavering as the Wind, a Traytor, of turbulent Spirit, Perjured, Obscene, Rash, Inhumane, neither fearing God or caring for man, Unthankfull, Trecherous, Oppressors, Ravenous, Cheaters, Furious, Violent." },
@@ -255,7 +267,7 @@ const SUN: PlanetCatalog = {
     { heading: "House", page: 69, text: "He hath onely the Signe of Leo for his House, and Aquarius for his Detriment. He is Exalted in the 19 degree of Aries, and receives his Fall in 19 Libra." },
     { heading: "Triplicity", page: 69, text: "The Sunne governeth the fiery Triplicity, viz. Aries, Leo, Sagittarius by day." },
     { heading: "Terms", page: 69, text: "He hath no degrees of the twelve Signs admitted him for his Termes, though some affirme, if he be in the six Northerne Signes, viz. Aries, Taurus, Gemini, Cancer, Leo, Virgo, he shall be said to be in his Termes, but because there is no reason for it, I leave it as Idle." },
-    { heading: "Face", page: 69, text: "In the twelve Signes he hath degrees for his Decanate or Faces (printed in the chapter); they follow Lilly's own table of essential dignities (p. 104), shown in the dignity tables on this page; the chapter's degree lists are not repeated here." },
+    { heading: "Face", page: 69, text: "In the twelve Signes he hath degrees for his Decanate or Faces (printed in the chapter); they follow Lilly's own table of essential dignities (p. 104), shown in the dignity tables on the Dignities page (/dignities); the chapter's degree lists are not repeated here." },
     { heading: "Nature", page: 70, text: "He is naturally Hot, Dry, but more temperate then Mars; is a Masculine, Diurnall Planet, Equivalent, if well dignified to a Fortune." },
     { heading: "Manners when well dignified", page: 70, text: "Very faithfull, keeping their Promises with all punctuality, a kind of itching desire to Rule and Sway where he comes: Prudent, and of incomparable Judgment; of great Majesty and Statelinesse, Industrious to acquire Honour and a large Patrimony, yet as willingly departing therewith againe; the Solar man usually speaks with gravity, but not many words, and those with great confidence and command of his owne affection; full of Thought, Secret, Trusty, speaks deliberately, and notwithstanding his great Heart, yet is he Affable, Tractable, and very humane to all people, one loving Sumptuousnesse and Magnificence, and whatsoever is honorable; no sordid thoughts can enter his heart, &c." },
     { heading: "When ill dignified", page: 70, text: "Then the Solar man is Arrogant and Proud, disdaining all men, cracking of his Pedegree, he is Pur-blind in Sight and Judgment, restlesse, troublesome, domineering, a meer vapour, expensive, foolish, endued with no gravity in words, or sobernesse in Actions, a Spend-thrift, wasting his Patrimony, and hanging on other mens charity, yet thinks all men are bound to him, because a Gentleman borne." },
@@ -362,7 +374,7 @@ const MERCURY: PlanetCatalog = {
     { heading: "Latitude", page: 76, text: "His greatest South Latitude is 3 degr. 33 min. His greatest North Latit. is 3 deg. 33 min." },
     { heading: "House", page: 76, text: "He hath Gemini and Virgo for his Houses, and is exalted in the 15 of Virgo: he receives detriment in Sagittarius and Pisces, his fall is in Pisces." },
     { heading: "Triplicity", page: 76, text: "He ruleth the aery triplicity by night, viz. Gemini, Libra, Aquarius." },
-    TERMS_FACE(77, "He hath degrees in every Signe for his Termes (pp. 76–77) and degrees for his Face or Decanate (p. 77); they follow Lilly's own table of essential dignities (p. 104), shown in the dignity tables on this page; the chapter's degree lists are not repeated here."),
+    TERMS_FACE(77, "He hath degrees in every Signe for his Termes (pp. 76–77) and degrees for his Face or Decanate (p. 77); they follow Lilly's own table of essential dignities (p. 104), shown in the dignity tables on the Dignities page (/dignities); the chapter's degree lists are not repeated here."),
     { heading: "Nature", page: 77, text: "We may not call him either Masculine or Feminine, for he is either the one or other as joyned to any Planet; for if in conjunction with a Masculine Planet, he becomes Masculine; if with a Feminine, then Feminine, but of his owne nature he is cold and dry, and therefore Melancholly; with the good he is good, with the evill Planets ill; in the Elements the Water, amongst the humours, the mixt, he rules the animall spirit: he is author of subtilty, tricks and devices, perjury, &c." },
     { heading: "Manners when well placed", page: 77, text: "Being well dignified, he represents a man of a subtill and politick braine, intellect, and cogitation; an excellent disputant or Logician, arguing with learning and discretion, and using much eloquence in his speech, a searcher into all kinds of Mysteries, Learning, sharpe and witty, learning almost any thing without a Teacher; ambitious of being exquisite in every Science, desirous naturally of travell and seeing foraign parts, a man of an unwearied fancie, curious in the search of any occult knowledge; able by his owne Genius to produce wonders; given to Divination and the more secret knowledge; if he turne Merchant no man exceeds him in way of Trade or invention of new wayes whereby to obtain wealth." },
     { heading: "Manners when ill placed", page: 77, text: "A troublesome wit, a kinde of Phrenetick man, his tongue and Pen against every man, wholly bent to foole his estate and time in prating and trying nice conclusions to no purpose; a great lyar, boaster, pratler, busibody, false, a tale-carrier, given to wicked Arts, as Necromancy, and such like ungodly knowledges; easie of beleefe, an asse or very ideot, constant in no place or opinion, cheating and theeving every where; a newes-monger, pretending all manner of knowledge, but guilty of no true or solid learning; a trifler; a meere frantick fellow; if he prove a Divine, then a meer verball fellow, frothy, of no judgement, easily perverted, constant in nothing but idle words, and bragging (pp. 77–78)." },
@@ -413,7 +425,7 @@ const MOON: PlanetCatalog = {
     { heading: "Latitude", page: 80, text: "Her greatest North latitude is 5 degr. and 17 min. or thereabouts. Her greatest South latitude is 5 degr. and 12 min. She is never Retrograde, but alwayes direct; when she is slow in motion, and goeth lesse in 24 hours then 13 degr. and 10 min. she is then equivalent to a Retrograde Planet." },
     { heading: "House", page: 80, text: "She hath the Signe Cancer for her house, and Capricorn for her detriment; she is exalted in 3 Taurus, and hath her fall in 3 grad. Scorpio." },
     { heading: "Triplicity", page: 80, text: "She governeth the Earthly Triplicity by night, viz. Taurus, Virgo, Capricorn: The Sun and she hath no Termes assigned them." },
-    { heading: "Face", page: 80, text: "In the twelve Signes she hath degrees for her Decanate or Face (pp. 80–81); they follow Lilly's own table of essential dignities (p. 104), shown in the dignity tables on this page; the chapter's degree lists are not repeated here." },
+    { heading: "Face", page: 80, text: "In the twelve Signes she hath degrees for her Decanate or Face (pp. 80–81); they follow Lilly's own table of essential dignities (p. 104), shown in the dignity tables on the Dignities page (/dignities); the chapter's degree lists are not repeated here." },
     { heading: "Nature", page: 81, text: "She is a Feminine, Nocturnall Planet, Cold, Moyst and Flegmatique." },
     { heading: "Manners or actions when well placed or dignified", page: 81, text: "She signifieth one of composed Manners, a soft, tender creature, a Lover of all honest and ingenuous Sciences, a Searcher of, and Delighter in Novelties, naturally propense to flit and shift his Habitation, unstedfast, wholly caring for the present Times, Timorous, Prodigal, and easily Frighted, however loving Peace, and to live free from the cares of this Life; if a Mechanick, the man learnes many Occupations, and frequently will be tampering with many wayes to trade in." },
     { heading: "When ill", page: 81, text: "A meer Vagabond, idle Person, hating Labour, a Drunkard, a Sot, one of no Spirit or Forecast, delighting to live beggarly and carelesly, one content in no condition of Life, either good or ill." },
@@ -481,6 +493,13 @@ export const DIGNITY_TERMS: DignityTermDef[] = [
   { code: "fall", name: "fall", definition: "The sign opposite a planet's exaltation; a debility." },
   { code: "peregrine", name: "peregrine", definition: "A planet with none of the five essential dignities where it stands: house, exaltation, triplicity, term or face." },
 ];
+
+export function planetFromPath(pathname: string): PlanetCatalog | undefined {
+  const p = pathname.replace(/\/+$/, "") || "/";
+  if (!p.startsWith(`${DIGNITIES_PATH}/`)) return undefined;
+  const slug = p.slice(DIGNITIES_PATH.length + 1);
+  return PLANET_CATALOGS.find((c) => c.key === slug);
+}
 
 export const FURTHER_STUDY_IDS = ["tetrabiblos", "astrologia-restaurata", "liber-astronomiae"];
 

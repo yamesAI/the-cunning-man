@@ -36,6 +36,13 @@ For entertainment and study — not financial, medical, or legal advice.
   faces, detriment, fall), and William Lilly's complete Book 1 signification lists for Saturn,
   Jupiter, Mars, the Sun, Venus, Mercury and the Moon (Christian Astrology, 1647), transcribed from
   the public-domain scan with page references. Sickness notes are historical study text only.
+- /dignities/saturn — Saturn: a study page from Lilly, Christian Astrology, 1647, Book 1.
+- /dignities/jupiter — Jupiter: a study page from Lilly, Christian Astrology, 1647, Book 1.
+- /dignities/mars — Mars: a study page from Lilly, Christian Astrology, 1647, Book 1.
+- /dignities/sun — Sun: a study page from Lilly, Christian Astrology, 1647, Book 1.
+- /dignities/venus — Venus: a study page from Lilly, Christian Astrology, 1647, Book 1.
+- /dignities/mercury — Mercury: a study page from Lilly, Christian Astrology, 1647, Book 1.
+- /dignities/moon — Moon: a study page from Lilly, Christian Astrology, 1647, Book 1.
 
 ## Technical notes for agents
 
