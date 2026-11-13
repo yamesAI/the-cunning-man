@@ -62,7 +62,7 @@ const TERMS_FACE = (page: number, text?: string): CatalogEntry => ({
 const SATURN: PlanetCatalog = {
   key: "saturn",
   name: "Saturn",
-  alternateName: ["Saturne", "Chronos", "Phœnon", "Falcifer"],
+  alternateName: ["Saturne", "Chronos", "Phænon", "Falcifer"],
   chapter: "Chap. VIII. Of the Planet Saturne, and his signification",
   pages: "pp. 57–61",
   day: "Saturday",
@@ -81,7 +81,7 @@ const SATURN: PlanetCatalog = {
     { name: "Ingoldstad", type: "City" },
   ],
   entries: [
-    { heading: "Names", page: 57, text: "He is called usually Saturne, but in some Authors Chronos, Phœnon, Falcifer." },
+    { heading: "Names", page: 57, text: "He is called usually Saturne, but in some Authors Chronos, Phænon, Falcifer." },
     { heading: "Colour", page: 57, text: "He is the supreamest or highest of all the Planets; is placed betwixt Jupiter and the Firmament, he is not very bright or glorious, or doth he twinckle or sparkle, but is of a Pale, Wan or Leaden, Ashy colour." },
     { heading: "Motion", page: 57, text: "Slow in Motion, finishing his Course through the twelve Signes of the Zodiack in 29 yeers, 157 dayes, or thereabouts; his middle motion is two minutes and one second; his diurnall motion sometimes is three, four, five, or six minutes, seldome more. He continueth Retrograde 140 dayes. He is five dayes in his first station before Retrogradation, and so many in his second station before Direction (p. 58)." },
     { heading: "Latitude", page: 57, text: "His greatest North latitude from the Ecliptick is two degrees 48 minutes; his South latitude from the Ecliptick is two degrees 49 minutes; and more then this he hath not." },
@@ -198,7 +198,7 @@ const MARS: PlanetCatalog = {
   entries: [
     { heading: "Names", page: 65, text: "Mars doth in order succeed Jupiter, whom the Ancients sometimes called Mavors, Aris, Pyrois, Gradivus; he is lesse in body then Jupiter or Venus." },
     { heading: "Colour in the Element", page: 65, text: "He appeareth to our sight of a shining, fiery, sparkling colour." },
-    { heading: "Motion", page: 65, text: "He finisheth his course in the Zodiack in one yeer 321 dayes, or thereabous. His mean motion is 31 degr. 27 min. His diurnall motion is sometimes 32, 34, 36, 38, 40, 42, 44 min. a day, seldome more. He is retrograde 80 dayes; stationary before he be retrograde, two or three dayes, &c. He is stationary before direction two dayes, after, but one day." },
+    { heading: "Motion", page: 65, text: "He finisheth his course in the Zodiack in one yeer 321 dayes, or thereabouts. His mean motion is 31 degr. 27 min. His diurnall motion is sometimes 32, 34, 36, 38, 40, 42, 44 min. a day, seldome more. He is retrograde 80 dayes; stationary before he be retrograde, two or three dayes, &c. He is stationary before direction two dayes, after, but one day." },
     { heading: "Latitude", page: 65, text: "His greatest latitude North is 4° 31′. his South is 6 degr. and 47." },
     { heading: "Houses", page: 65, text: "He hath Aries for his Day-house, and Scorpio for his Night-house; he is exalted in 28 degr. of Capricorn, and is depressed in 28 Cancer, he receiveth detriment in Libra and Taurus." },
     { heading: "Triplicity", page: 65, text: "He governeth wholly the Watry Triplicity, viz. Cancer, Scorpio, Pisces." },
