@@ -6,7 +6,10 @@ import { join } from "node:path";
 import { createHash } from "node:crypto";
 import { routeHead, absUrl, isoDate, SITE_ORIGIN } from "../src/site/structuredData";
 import { PRESS } from "../src/site/press";
-import { LIBRARY_BOOKS, LIBRARY_DESCRIPTION, LIBRARY_SUBTITLE, LIBRARY_TERMS } from "../src/site/library";
+import {
+  LIBRARY_BOOKS, LIBRARY_DESCRIPTION, LIBRARY_PATH, LIBRARY_SUBTITLE, LIBRARY_TERMS,
+  bookPageDescription, bookPageName, bookPath,
+} from "../src/site/library";
 import { TESTIMONY } from "../src/data/tradition";
 import {
   DIGNITIES_DESCRIPTION, DIGNITIES_PATH, DIGNITIES_SUBTITLE, DISCLAIMER, LATER_BOOK1_POINTERS, LILLY_SOURCE,
@@ -34,6 +37,7 @@ const ALLOWED_KEYS: Record<string, Set<string>> = { "/sky": new Set(["featureLis
 // Person (name only; checked exactly below). Everywhere else Person stays forbidden.
 const ALLOWED_TYPES: Record<string, Set<string>> = { "/library": new Set(["Person"]), "/dignities": new Set(["Person"]) };
 for (const c of PLANET_CATALOGS) ALLOWED_TYPES[planetPath(c.key)] = new Set(["Person"]);
+for (const b of LIBRARY_BOOKS) ALLOWED_TYPES[bookPath(b.id)] = new Set(["Person"]);
 
 function walk(v: unknown, where: string, allow: Set<string> = new Set(), allowTypes: Set<string> = new Set()) {
   if (Array.isArray(v)) return v.forEach((x, i) => walk(x, `${where}[${i}]`, allow, allowTypes));
@@ -171,9 +175,9 @@ items.forEach((it, i) => {
     const w = want[i];
     assert(el["@type"] === "ListItem" && el.position === i + 1 && Object.keys(el).sort().join(",") === "@type,item,position", `/library item ${i}: ListItem position + item`);
     const b = el.item as Record<string, unknown>;
-    const keys = ["@type", "author", "datePublished", "description", "inLanguage", "isAccessibleForFree", "keywords", "name", "url", ...(w.translator ? ["translator"] : [])].sort();
+    const keys = ["@id", "@type", "author", "datePublished", "description", "inLanguage", "isAccessibleForFree", "keywords", "name", "url", ...(w.translator ? ["translator"] : [])].sort();
     assert(Object.keys(b).sort().join(",") === keys.join(","), `/library item ${i}: metadata-only Book properties`);
-    assert(b["@type"] === "Book" && b.name === w.name && b.url === w.url && b.datePublished === w.year, `/library item ${i}: Book ${w.name} ${w.year}`);
+    assert(b["@type"] === "Book" && b["@id"] === `${absUrl("/library")}#${LIBRARY_BOOKS[i].id}` && b.name === w.name && b.url === w.url && b.datePublished === w.year, `/library item ${i}: Book ${w.name} ${w.year}`);
     assert(b.inLanguage === "en" && b.isAccessibleForFree === true, `/library item ${i}: en, free`);
     assert(JSON.stringify(b.author) === JSON.stringify({ "@type": "Person", name: w.author }), `/library item ${i}: author Person name only`);
     if (w.translator) assert(JSON.stringify(b.translator) === JSON.stringify({ "@type": "Person", name: w.translator }), `/library item ${i}: translator Person name only`);
@@ -220,8 +224,17 @@ items.forEach((it, i) => {
   // public files list /library
   const sitemap = readFileSync(new URL("../public/sitemap.xml", import.meta.url), "utf8");
   const llms = readFileSync(new URL("../public/llms.txt", import.meta.url), "utf8");
-  assert(sitemap.includes("<loc>https://cunning-man.vercel.app/library</loc>") && !/\/library\//.test(sitemap), "sitemap: /library, no /library/:slug");
+  assert(sitemap.includes("<loc>https://cunning-man.vercel.app/library</loc>"), "sitemap: /library");
+  for (const b of LIBRARY_BOOKS) {
+    assert(sitemap.includes(`<loc>https://cunning-man.vercel.app/library/${b.id}</loc>`), `sitemap: /library/${b.id}`);
+  }
   assert(/^- \/library — /m.test(llms), "llms.txt: /library line");
+  for (const b of LIBRARY_BOOKS) {
+    const re = new RegExp(`^- /library/${b.id} — .+`, "m");
+    const line = (llms.match(re) || [""])[0];
+    assert(line.includes(b.title) && /study page/.test(line) && /public-domain source/.test(line) && /No full text is hosted/.test(line), `llms.txt: /library/${b.id}`);
+    assert(!/scan/i.test(line) && !/\btrad(e|es|er|ers|ing)\b|\bentr(y|ies)\b|signal|price|financ|invest|advice|prop[- ]?firm/i.test(line), `llms.txt: /library/${b.id} clean wording`);
+  }
   // L-1: shared copy must be true of all four sources (Ptolemy's URL is an
   // HTML transcription, not a scan). Per-item scanNotes may still say "scan".
   assert(ld.description === LIBRARY_DESCRIPTION, "/library: JSON-LD description matches page description");
@@ -238,7 +251,80 @@ items.forEach((it, i) => {
   assert(ramesey.year === 1653 && /1654/.test(ramesey.scanNote ?? ""), "/library Ramesey: year 1653, scan note 1654");
   assert(bonatti.year === 1676 && /1676/.test(bonatti.yearLabel) && /1886/.test(bonatti.scanNote ?? "") && /1676 title page/.test(bonatti.scanNote ?? ""), "/library Bonatti: year 1676, scan note 1886 and 1676 title page");
   assert(!(ptolemy.scanNote ?? "").length, "/library Ptolemy: no scan note on the HTML source");
+  const appSrc = readFileSync(new URL("../src/App.tsx", import.meta.url), "utf8");
+  assert(/<Route path="\/library" element=\{<LibraryPage \/>\} \/>/.test(appSrc), "App.tsx: /library index route");
+  assert(/<Route path="\/library\/:book" element=\{<LibraryPage \/>\} \/>/.test(appSrc), "App.tsx: /library/:book child route");
+  assert(appSrc.lastIndexOf('path="*"') > appSrc.lastIndexOf("/library/:book"), "App.tsx: catch-all remains last");
+  const layout = readFileSync(new URL("../src/components/SiteLayout.tsx", import.meta.url), "utf8");
+  assert((layout.match(/label: "Library"/g) || []).length === 1 && !/to: "\/library\//.test(layout), "header nav: one Library entry, no per-book items");
 }
+
+// /library/:book (HUB-PAGES-001 §3.2, D-1): WebPage about the existing Book,
+// backlinks, breadcrumbs, stable Book @id, no hosted full text, no banned types.
+{
+  const LIB_URL = "https://cunning-man.vercel.app/library";
+  const indexLd = routeHead(LIBRARY_PATH).jsonLd!;
+  const indexBooks = ((indexLd.mainEntity as Record<string, unknown>).itemListElement as Record<string, unknown>[]).map((el) => el.item as Record<string, unknown>);
+  const BANNED = /\btrad(e|es|er|ers|ing)\b|\bentr(y|ies)\b|\bexit|signal|\bbuy\b|\bsell\b|\bedge\b|win rate|profit|ticker|funded|prop[- ]?firm|price|financ|invest|\bcur(e|es|ed|ing)\b|\bdos(e|es|ing|age)\b|remed|prescri|career|\$/i;
+  const pageSrc = readFileSync(new URL("../src/pages/site/LibraryPage.tsx", import.meta.url), "utf8");
+  const BOOK_TYPES = ["WebPage", "WebSite", "Book", "Person", "DefinedTerm", "BreadcrumbList", "ListItem"];
+  const BANNED_TYPES = /"@type":"(Library|LibrarySystem|EsotericLibrary|Article|CreativeWork|DigitalDocument|NewsArticle|WebApplication|CollectionPage|Offer|MonetaryAmount|Plant|Animal|Taxon|Drug|Medical[A-Za-z]*|DietarySupplement|Substance|HowTo|HowToStep)"/;
+  const BANNED_PROPS = /"(offers|price|priceCurrency|publisher|creator|isbn|numberOfPages|articleBody|genre|disclaimer)"/;
+
+  for (const b of LIBRARY_BOOKS) {
+    const path = bookPath(b.id);
+    const h = routeHead(path);
+    assert(h.jsonLd, `${path}: has JSON-LD`);
+    const ld = h.jsonLd!;
+    const text = JSON.stringify(ld);
+    const types = [...text.matchAll(/"@type":"([^"]+)"/g)].map((m) => m[1]);
+    assert(ld["@type"] === "WebPage" && ld.name === bookPageName(b.title), `${path}: WebPage, not Book`);
+    assert(h.canonical === absUrl(path) && ld.url === h.canonical, `${path}: canonical per route`);
+    assert(ld.description === bookPageDescription(b), `${path}: description from the catalog`);
+    assert(!/scan/i.test(bookPageDescription(b)), `${path}: shared description does not say scan`);
+    assert(ld.isAccessibleForFree === true, `${path}: isAccessibleForFree`);
+    assert(Object.keys(ld).sort().join(",") === "@context,@type,about,breadcrumb,description,inLanguage,isAccessibleForFree,isBasedOn,isPartOf,mainEntity,name,relatedLink,url", `${path}: only the book-page properties`);
+    common(path, ld);
+    assert(BOOK_TYPES.every((t) => types.includes(t)), `${path}: uses the required types`);
+    for (const t of new Set(types)) assert(BOOK_TYPES.includes(t), `${path}: allowed @type ${t}`);
+    assert(!BANNED_TYPES.test(text), `${path}: no banned or invented types`);
+    assert(!BANNED_PROPS.test(text), `${path}: no banned properties`);
+    assert(!/AstroTrading|ai-vs-the-sky|AI vs the Sky|\.pdf/i.test(text), `${path}: no firm brand, no AI vs the Sky PDF`);
+    assert(!/\/press/.test(text), `${path}: no press URLs`);
+    const book = ld.mainEntity as Record<string, unknown>;
+    assert(JSON.stringify(book) === JSON.stringify(ld.about) && JSON.stringify(book) === JSON.stringify(ld.isBasedOn), `${path}: about, mainEntity and isBasedOn are the same Book`);
+    assert(book["@type"] === "Book" && book["@id"] === `${LIB_URL}#${b.id}` && book.url === b.url && book.url !== absUrl(path), `${path}: Book @id and scan url, not the hub page`);
+    assert(book.name === b.title && book.description === b.note && book.datePublished === String(b.year), `${path}: Book fields from the catalog`);
+    assert(JSON.stringify(book.author) === JSON.stringify({ "@type": "Person", name: b.author }), `${path}: author Person name only`);
+    if (b.translator) assert(JSON.stringify(book.translator) === JSON.stringify({ "@type": "Person", name: b.translator }), `${path}: translator Person name only`);
+    const persons = [...text.matchAll(/\{"@type":"Person"[^}]*\}/g)].map((m) => m[0]);
+    assert(persons.length > 0 && persons.every((p) => p === `{"@type":"Person","name":"${b.author}"}` || (b.translator ? p === `{"@type":"Person","name":"${b.translator}"}` : false)), `${path}: Person only as author or translator, name only`);
+    const indexBook = indexBooks.find((x) => x["@id"] === book["@id"])!;
+    assert(indexBook && indexBook["@id"] === book["@id"] && indexBook.url === book.url, `${path}: Book @id matches the collection`);
+    const crumbs = ld.breadcrumb as Record<string, unknown>;
+    const items = crumbs.itemListElement as Record<string, unknown>[];
+    assert(crumbs["@type"] === "BreadcrumbList" && items.length === 3, `${path}: BreadcrumbList of three steps`);
+    assert(items[0]["@type"] === "ListItem" && items[0].position === 1 && items[0].name === "The Cunning Man" && items[0].item === `${SITE_ORIGIN}/`, `${path}: breadcrumb 1`);
+    assert(items[1]["@type"] === "ListItem" && items[1].position === 2 && items[1].name === "Library" && items[1].item === LIB_URL, `${path}: breadcrumb 2`);
+    assert(items[2]["@type"] === "ListItem" && items[2].position === 3 && items[2].name === b.title && items[2].item === absUrl(path), `${path}: breadcrumb 3 is this page`);
+    const related = ld.relatedLink as string[];
+    const siblings = LIBRARY_BOOKS.filter((x) => x.id !== b.id).map((x) => absUrl(bookPath(x.id)));
+    assert(Array.isArray(related) && related.length === 3 && JSON.stringify(related) === JSON.stringify(siblings), `${path}: relatedLink is the three sibling URLs`);
+    assert(!BANNED.test(text) && !/advice/i.test(text), `${path}: no banned wording in JSON-LD`);
+    assert(JSON.stringify(routeHead(path + "/")) === JSON.stringify(h), `${path}/: trailing slash is the same page`);
+  }
+
+  assert(/aria-label="Breadcrumb"/.test(pageSrc), "book page: visible breadcrumb trail");
+  assert(/Back to Library/.test(pageSrc), "book page: visible back link to /library");
+  assert(/aria-label="Other books"/.test(pageSrc) && /LIBRARY_BOOKS\.filter\(\(b\) => b\.id !== book\.id\)/.test(pageSrc), "book page: visible links to the three siblings");
+  assert(/This book page was not found/.test(pageSrc), "unknown slug: short miss state");
+  assert(!/SiteHome/.test(pageSrc), "book miss does not render SiteHome");
+  assert(/bookFromPath/.test(pageSrc) && !/PRESS\[0\]/.test(pageSrc), "unknown slug does not copy the press fallback");
+  const pageLiterals = [...pageSrc.replace(/className="[^"]*"/g, "").matchAll(/>([^<>{}]+)</g)].map((m) => m[1]).join(" ");
+  const lit = pageLiterals.replace(/Not financial, medical, or legal advice\./g, "");
+  assert(!BANNED.test(lit) && !/\badvice\b/i.test(lit), "book/miss page literals: no banned wording");
+}
+
 
 // /dignities (DIGNITIES-001 v1.1 §4–§7, CEO D-1–D-6 and 14:21 rulings): a WebPage
 // (not WebApplication, CollectionPage or Library) with three DefinedTermSets and
@@ -526,7 +612,7 @@ assert(isoDate("September 1, 2026") === "2026-09-01", "isoDate example");
 assert(isoDate("not a date") === null, "isoDate rejects junk");
 
 // 4. unknown paths and slugs: no FAQPage / Article, never another item's block
-for (const path of ["/dignity", "/library/christian-astrology", "/library/x", "/lib", "/nope", "/clock/extra", "/press/nope", "/press/LAUNCH", "/press/launch/x", "/spells", "/spells/other", "/index.html"]) {
+for (const path of ["/dignity", "/lib", "/nope", "/clock/extra", "/press/nope", "/press/LAUNCH", "/press/launch/x", "/spells", "/spells/other", "/index.html"]) {
   const h = routeHead(path);
   assert(h.jsonLd === null, `${path}: unknown -> no JSON-LD`);
 }
@@ -542,9 +628,18 @@ for (const path of ["/dignities/x", "/dignities/pluto", "/dignities/uranus", "/d
 }
 assert(routeHead("/dignities/saturn").jsonLd !== null, "/dignities/saturn is a known planet page");
 
+// HUB-PAGES-001 unknown library slugs: miss, no JSON-LD, canonical /library
+for (const path of ["/library/x", "/library/Christian-Astrology", "/library/CHRISTIAN-ASTROLOGY", "/library/christian-astrology/extra", "/library/esoteric", "/library/ai-vs-the-sky"]) {
+  const h = routeHead(path);
+  assert(h.jsonLd === null, `${path}: unknown library slug -> no JSON-LD`);
+  assert(h.canonical === absUrl(LIBRARY_PATH), `${path}: canonical is /library`);
+  assert(h.canonical !== `${SITE_ORIGIN}/` && !LIBRARY_BOOKS.some((b) => h.canonical === absUrl(bookPath(b.id))), `${path}: not home or another book`);
+}
+assert(routeHead("/library/christian-astrology").jsonLd !== null, "/library/christian-astrology is a known book page");
+
 // App.tsx routes all covered
 const app = readFileSync(new URL("../src/App.tsx", import.meta.url), "utf8");
-const routes = [...app.matchAll(/path="([^"]+)"/g)].map((m) => m[1]).filter((r) => r !== "*" && r !== "/press/:slug" && r !== "/dignities/:planet" && r !== "/dignities/*");
+const routes = [...app.matchAll(/path="([^"]+)"/g)].map((m) => m[1]).filter((r) => r !== "*" && r !== "/press/:slug" && r !== "/dignities/:planet" && r !== "/dignities/*" && r !== "/library/:book" && r !== "/library/*");
 for (const r of routes) assert(EXPECT[r], `App route ${r} has expected structured data`);
 
 // 6. source: index.html WebSite kept, no price fields; no page-level JSON-LD outside the table

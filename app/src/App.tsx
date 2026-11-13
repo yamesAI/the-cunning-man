@@ -36,6 +36,8 @@ export default function App() {
           <Route path="/press" element={<PressIndex />} />
           <Route path="/press/:slug" element={<PressRelease />} />
           <Route path="/library" element={<LibraryPage />} />
+          <Route path="/library/:book" element={<LibraryPage />} />
+          <Route path="/library/*" element={<LibraryPage />} />
           <Route path="/dignities" element={<DignitiesPage />} />
           <Route path="/dignities/:planet" element={<DignitiesPage />} />
           <Route path="/dignities/*" element={<DignitiesPage />} />
