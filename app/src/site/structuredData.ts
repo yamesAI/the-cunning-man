@@ -16,6 +16,8 @@ import {
   planetFromPath, planetPageDescription, planetPageName, planetPath, signDignities,
 } from "./dignities";
 import { PLANET_LABEL, SIGN_LABEL } from "../astro/constants";
+import { artForPath, contentPath, creditText } from "./art";
+import { learnMoreForName } from "./learnMore";
 
 export const SITE_ORIGIN = "https://cunning-man.vercel.app";
 export const SITE_NAME = "The Cunning Man";
@@ -208,8 +210,14 @@ function planetChapter(c: PlanetCat): Json {
     about: planetRef(c.key),
     mentions: [
       { "@type": "DayOfWeek", "@id": `https://schema.org/${c.day}`, name: c.day },
-      ...c.occupations.map((name) => ({ "@type": "Occupation", name, description: `Named ${where}.` })),
-      ...c.places.map((p) => ({ "@type": p.type, name: p.name, description: `Listed ${where}.` })),
+      ...c.occupations.map((name) => {
+        const row = learnMoreForName(name);
+        return { "@type": "Occupation", name, description: `Named ${where}.`, ...(row?.sameAs ? { sameAs: row.url } : {}) };
+      }),
+      ...c.places.map((pl) => {
+        const row = learnMoreForName(pl.name);
+        return { "@type": pl.type, name: pl.name, description: `Listed ${where}.`, ...(row?.sameAs ? { sameAs: row.url } : {}) };
+      }),
       ...[...new Set([...c.friends, ...c.enemies])].map(planetRef),
     ],
   };
@@ -394,7 +402,7 @@ export interface RouteHead {
   jsonLd: Json | null;
 }
 
-export function routeHead(pathname: string): RouteHead {
+function routeHeadRaw(pathname: string): RouteHead {
   const p = norm(pathname);
   const key = p.toLowerCase();
   if (STATIC[key]) return { canonical: absUrl(key), jsonLd: STATIC[key]() };
@@ -438,4 +446,35 @@ export function routeHead(pathname: string): RouteHead {
   // Unknown path: the catch-all renders the home content; canonical is the
   // root, and no FAQPage or other route JSON-LD is emitted.
   return { canonical: absUrl("/"), jsonLd: null };
+}
+
+function pageImageObject(pathname: string): Json | null {
+  const hit = artForPath(pathname);
+  if (!hit) return null;
+  const { work, assignment } = hit;
+  const about = assignment.about.length === 1 ? assignment.about[0] : assignment.about;
+  const img: Json = {
+    "@type": "ImageObject",
+    contentUrl: absUrl(contentPath(work)),
+    url: work.sourceRecord,
+    license: work.license,
+    acquireLicensePage: work.acquireLicensePage,
+    creditText: creditText(work),
+    creator: { "@type": "Person", name: work.artist },
+    about,
+  };
+  if (work.dateCreated) img.dateCreated = work.dateCreated;
+  return img;
+}
+
+function attachArt(pathname: string, head: RouteHead): RouteHead {
+  if (!head.jsonLd) return head;
+  const img = pageImageObject(pathname);
+  if (!img) return head;
+  return { canonical: head.canonical, jsonLd: { ...head.jsonLd, primaryImageOfPage: img } };
+}
+
+export function routeHead(pathname: string): RouteHead {
+  const p = pathname.replace(/\/+$/, "") || "/";
+  return attachArt(p === "" ? "/" : p, routeHeadRaw(pathname));
 }
