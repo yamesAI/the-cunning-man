@@ -12,6 +12,8 @@ import {
   DIGNITIES_DESCRIPTION, DIGNITIES_PATH, DIGNITIES_SUBTITLE, DISCLAIMER, LATER_BOOK1_POINTERS, LILLY_SOURCE,
   LILLY_TABLE_TERMS, PLANET_CATALOGS, planetPageDescription, planetPageName, planetPath, signDignities,
 } from "../src/site/dignities";
+import { ART_ASSIGNMENTS, ART_WORKS, SHIPPED_FILES, artForPath, contentPath, creditText } from "../src/site/art";
+import { LEARN_MORE, learnMoreForName } from "../src/site/learnMore";
 
 let n = 0;
 function assert(cond: unknown, msg: string) {
@@ -36,10 +38,13 @@ for (const c of PLANET_CATALOGS) ALLOWED_TYPES[planetPath(c.key)] = new Set(["Pe
 function walk(v: unknown, where: string, allow: Set<string> = new Set(), allowTypes: Set<string> = new Set()) {
   if (Array.isArray(v)) return v.forEach((x, i) => walk(x, `${where}[${i}]`, allow, allowTypes));
   if (v && typeof v === "object") {
+    const typ = String((v as Record<string, unknown>)["@type"] ?? "");
+    const keys = typ === "ImageObject" ? new Set([...allow, "creator"]) : allow;
+    const types = typ === "ImageObject" ? new Set([...allowTypes, "Person"]) : allowTypes;
     for (const [k, x] of Object.entries(v as Record<string, unknown>)) {
-      assert(!FORBIDDEN_KEYS.has(k) || allow.has(k), `${where}: forbidden key ${k}`);
-      if (k === "@type") assert(!FORBIDDEN_TYPES.has(String(x)) || allowTypes.has(String(x)), `${where}: forbidden @type ${x}`);
-      walk(x, `${where}.${k}`, allow, allowTypes);
+      assert(!FORBIDDEN_KEYS.has(k) || keys.has(k), `${where}: forbidden key ${k}`);
+      if (k === "@type") assert(!FORBIDDEN_TYPES.has(String(x)) || types.has(String(x)), `${where}: forbidden @type ${x}`);
+      walk(x, `${where}.${k}`, keys, types);
     }
   }
 }
@@ -119,7 +124,7 @@ assert(!/prosper|wealth|riches/i.test(JSON.stringify(routeHead("/spells/money").
   assert(!/Offer|price|MonetaryAmount|offers/i.test(text), "/sky: no Offer/price/MonetaryAmount");
   assert(!/CreativeWork|temporalCoverage|isBasedOn/.test(text), "/sky: no result CreativeWork in v0");
   assert(!/\btrad(e|es|er|ers|ing)\b|\bentr(y|ies)\b|\bexit|signal|\bbuy\b|\bsell\b|\bedge\b|win rate|profit|market|ticker|funded|prop[- ]?firm|advice|disclaimer|forecast/i.test(text), "/sky: no trading/advice wording");
-  assert(Object.keys(ld).sort().join(",") === "@context,@type,applicationCategory,description,featureList,inLanguage,isAccessibleForFree,isPartOf,name,operatingSystem,url", "/sky: only the §5 properties");
+  assert(Object.keys(ld).sort().join(",") === "@context,@type,applicationCategory,description,featureList,inLanguage,isAccessibleForFree,isPartOf,name,operatingSystem,primaryImageOfPage,url", "/sky: only the §5 properties plus primaryImageOfPage");
 }
 
 // /press ItemList
@@ -248,12 +253,12 @@ items.forEach((it, i) => {
   assert(ld["@type"] === "WebPage" && ld.name === "The Cunning Man — Dignities and Correspondences", "/dignities: WebPage, D-1 name");
   assert(ld.url === DIG_URL && ld.isAccessibleForFree === true, "/dignities: absolute url, free");
   assert(ld.description === DIGNITIES_DESCRIPTION, "/dignities: JSON-LD description matches page description");
-  assert(Object.keys(ld).sort().join(",") === "@context,@type,about,description,hasPart,inLanguage,isAccessibleForFree,isBasedOn,isPartOf,name,url", "/dignities: only the §4 page properties");
-  const DIG_TYPES = ["WebPage", "WebSite", "Book", "Person", "DefinedTermSet", "DefinedTerm", "CreativeWork", "Occupation", "DayOfWeek", "Country", "City"];
+  assert(Object.keys(ld).sort().join(",") === "@context,@type,about,description,hasPart,inLanguage,isAccessibleForFree,isBasedOn,isPartOf,name,primaryImageOfPage,url", "/dignities: only the §4 page properties plus primaryImageOfPage");
+  const DIG_TYPES = ["WebPage", "WebSite", "Book", "Person", "DefinedTermSet", "DefinedTerm", "CreativeWork", "Occupation", "DayOfWeek", "Country", "City", "ImageObject"];
   assert(DIG_TYPES.every((t) => types.includes(t)), "/dignities: uses every §4 type");
   for (const t of new Set(types)) assert(DIG_TYPES.includes(t), `/dignities: allowed @type ${t}`);
   assert(!/"(WebApplication|CollectionPage|Library|LibrarySystem|Plant|Animal|Herb|Taxon|Drug|DrugClass|DietarySupplement|Substance|Medical[A-Za-z]*|SuperficialAnatomy|AnatomicalStructure|HowTo|HowToStep|AdministrativeArea|Landform|Cemetery|CivicStructure|LandmarksOrHistoricalBuildings|BodyOfWater|Place|State|Continent|Organization|Offer|MonetaryAmount|PriceSpecification|QuantitativeValue|QualitativeValue|PropertyValue|WeatherForecast|Color|Colour|Mineral|Angel|Deity|Planet|ZodiacSign|Correspondence|Profession|Tarot)"/.test(text), "/dignities: no WebApplication/CollectionPage/Library, no Plant/Animal/Taxon/Drug/Medical*/Substance/HowTo, no Place stretch, no Offer, no invented types");
-  assert(!/"(offers|price|priceCurrency|estimatedSalary|occupationalCategory|address|geo|telephone|relatedTo|knowsAbout|color|publisher|creator|dosage|keywords)"/.test(text), "/dignities: no Offer/price/salary/Place-business/relatedTo/knowsAbout/color/publisher/creator fields");
+  assert(!/"(offers|price|priceCurrency|estimatedSalary|occupationalCategory|address|geo|telephone|relatedTo|knowsAbout|color|publisher|creator|dosage|keywords)"/.test(JSON.stringify({ ...ld, primaryImageOfPage: undefined })), "/dignities: no Offer/price/salary/Place-business/relatedTo/knowsAbout/color/publisher/creator fields outside ImageObject");
   assert(!/uranus|neptune|pluto/i.test(text) && !/uranus|neptune|pluto/i.test(JSON.stringify(PLANET_CATALOGS)), "/dignities: no modern outer planets");
   assert(!/tarot|agrippa|al-biruni|biruni/i.test(text + JSON.stringify(PLANET_CATALOGS)), "/dignities: no tarot, Agrippa or Al-Biruni layer");
   // Lilly citation: same title, author, year, URL as library.ts / tradition.ts
@@ -262,7 +267,8 @@ items.forEach((it, i) => {
   assert(JSON.stringify(ld.isBasedOn) === book && lib.url === "https://archive.org/details/ca-william-lilly", "/dignities: isBasedOn is the library's Lilly Book");
   assert(LILLY_SOURCE.url === lib.url && TESTIMONY.some((t) => t.verifiedUrl === lib.url && t.author === lib.author && t.year === lib.year), "/dignities: Lilly URL matches library.ts and tradition.ts");
   const persons = [...text.matchAll(/\{"@type":"Person"[^}]*\}/g)].map((m) => m[0]);
-  assert(persons.length > 0 && persons.every((p) => p === `{"@type":"Person","name":"${lib.author}"}`), "/dignities: Person only as the cited Book's author, name only");
+  const allowedPeople = new Set([`{"@type":"Person","name":"${lib.author}"}`, '{"@type":"Person","name":"Sebald Beham"}']);
+  assert(persons.length > 0 && persons.every((p) => allowedPeople.has(p)), "/dignities: Person only as the cited Book's author or the ImageObject artist, name only");
   // term sets
   const parts = ld.hasPart as Record<string, unknown>[];
   const sets = parts.filter((x) => x["@type"] === "DefinedTermSet");
@@ -309,13 +315,23 @@ items.forEach((it, i) => {
     const occ = men.filter((m) => m["@type"] === "Occupation");
     assert(occ.length === c.occupations.length && occ.length > 0, `${where}: Occupation per named trade or station`);
     for (const o of occ) {
-      assert(Object.keys(o).sort().join(",") === "@type,description,name", `${where} Occupation ${o.name}: name + description only`);
+      const okeys = Object.keys(o).sort().join(",");
+      assert(okeys === "@type,description,name" || okeys === "@type,description,name,sameAs", `${where} Occupation ${o.name}: name + description only`);
+      if (okeys.includes("sameAs")) {
+        const row = learnMoreForName(String(o.name));
+        assert(row && row.sameAs && o.sameAs === row.url, `${where} Occupation ${o.name}: sameAs is the sample learn-more URL`);
+      }
       assert(visible.includes(String(o.name)), `${where} Occupation ${o.name}: named in the chapter text`);
     }
     const places = men.filter((m) => m["@type"] === "Country" || m["@type"] === "City");
     const countries = c.entries.filter((e) => e.heading === "Countries").map((e) => e.text).join(" ");
     for (const p of places) {
-      assert(Object.keys(p).sort().join(",") === "@type,description,name", `${where} ${p["@type"]} ${p.name}: name + description only`);
+      const pkeys = Object.keys(p).sort().join(",");
+      assert(pkeys === "@type,description,name" || pkeys === "@type,description,name,sameAs", `${where} ${p["@type"]} ${p.name}: name + description only`);
+      if (pkeys.includes("sameAs")) {
+        const row = learnMoreForName(String(p.name));
+        assert(row && row.sameAs && p.sameAs === row.url, `${where} ${p.name}: sameAs is the sample learn-more URL`);
+      }
       assert(countries.includes(String(p.name)), `${where} ${p.name}: in the chapter's Countries list`);
     }
     assert(!/Climate/i.test(JSON.stringify(places)), `${where}: numbered climates not typed as places`);
@@ -411,7 +427,7 @@ items.forEach((it, i) => {
   const book = JSON.stringify({ "@type": "Book", name: lib.title, author: { "@type": "Person", name: lib.author }, datePublished: String(lib.year), url: lib.url });
   const BANNED = /\btrad(e|es|er|ers|ing)\b|\bentr(y|ies)\b|\bexit|signal|\bbuy\b|\bsell\b|\bedge\b|win rate|profit|ticker|funded|prop[- ]?firm|price|financ|invest|\bcur(e|es|ed|ing)\b|\bdos(e|es|ing|age)\b|remed|prescri|career|\$/i;
   const pageSrc = readFileSync(new URL("../src/pages/site/DignitiesPage.tsx", import.meta.url), "utf8");
-  const PLANET_TYPES = ["WebPage", "WebSite", "Book", "Person", "DefinedTermSet", "DefinedTerm", "CreativeWork", "Occupation", "DayOfWeek", "Country", "City", "BreadcrumbList", "ListItem"];
+  const PLANET_TYPES = ["WebPage", "WebSite", "Book", "Person", "DefinedTermSet", "DefinedTerm", "CreativeWork", "Occupation", "DayOfWeek", "Country", "City", "BreadcrumbList", "ListItem", "ImageObject"];
   const BANNED_TYPES = /"(WebApplication|CollectionPage|Library|LibrarySystem|Plant|Animal|Herb|Taxon|Drug|DrugClass|DietarySupplement|Substance|Medical[A-Za-z]*|SuperficialAnatomy|AnatomicalStructure|HowTo|HowToStep|AdministrativeArea|Landform|Cemetery|CivicStructure|LandmarksOrHistoricalBuildings|BodyOfWater|Place|State|Continent|Organization|Offer|MonetaryAmount|PriceSpecification|QuantitativeValue|QualitativeValue|PropertyValue|WeatherForecast|Color|Colour|Mineral|Angel|Deity|Planet|ZodiacSign|Correspondence|Profession|Tarot)"/;
   const BANNED_PROPS = /"(offers|price|priceCurrency|estimatedSalary|occupationalCategory|address|geo|telephone|relatedTo|knowsAbout|color|publisher|creator|dosage|keywords)"/;
 
@@ -426,7 +442,10 @@ items.forEach((it, i) => {
     assert(h.canonical === absUrl(path) && ld.url === h.canonical, `${path}: canonical per route`);
     assert(ld.description === planetPageDescription(c), `${path}: description from the catalog`);
     assert(ld.isAccessibleForFree === true, `${path}: isAccessibleForFree`);
-    assert(Object.keys(ld).sort().join(",") === "@context,@type,about,breadcrumb,description,hasPart,inLanguage,isAccessibleForFree,isBasedOn,isPartOf,mainEntity,name,relatedLink,url", `${path}: only the §4 page properties`);
+    const keys = Object.keys(ld).sort().join(",");
+    const baseKeys = "@context,@type,about,breadcrumb,description,hasPart,inLanguage,isAccessibleForFree,isBasedOn,isPartOf,mainEntity,name,relatedLink,url";
+    const artKeys = "@context,@type,about,breadcrumb,description,hasPart,inLanguage,isAccessibleForFree,isBasedOn,isPartOf,mainEntity,name,primaryImageOfPage,relatedLink,url";
+    assert(keys === (artForPath(path) ? artKeys : baseKeys), `${path}: only the §4 page properties`);
     common(path, ld);
     const required = ["WebPage", "WebSite", "Book", "Person", "DefinedTermSet", "DefinedTerm", "CreativeWork", "Occupation", "DayOfWeek", "BreadcrumbList", "ListItem"];
     assert(required.every((t) => types.includes(t)), `${path}: uses the required types`);
@@ -434,12 +453,15 @@ items.forEach((it, i) => {
     if (c.places.some((pl) => pl.type === "City")) assert(types.includes("City"), `${path}: City`);
     for (const t of new Set(types)) assert(PLANET_TYPES.includes(t), `${path}: allowed @type ${t}`);
     assert(!BANNED_TYPES.test(text), `${path}: no banned or invented types`);
-    assert(!BANNED_PROPS.test(text), `${path}: no banned properties`);
+    assert(!BANNED_PROPS.test(JSON.stringify({ ...ld, primaryImageOfPage: undefined })), `${path}: no banned properties outside ImageObject`);
     assert(!/uranus|neptune|pluto/i.test(text), `${path}: no modern outer planets`);
     assert(!/tarot|agrippa|al-biruni|biruni/i.test(text), `${path}: no tarot, Agrippa or Al-Biruni`);
     assert(JSON.stringify(ld.isBasedOn) === book, `${path}: isBasedOn the Lilly Book`);
     const persons = [...text.matchAll(/\{"@type":"Person"[^}]*\}/g)].map((m) => m[0]);
-    assert(persons.length > 0 && persons.every((p) => p === `{"@type":"Person","name":"${lib.author}"}`), `${path}: Person only as the cited Book's author, name only`);
+    const artists = new Set([`{"@type":"Person","name":"${lib.author}"}`]);
+    const artHit = artForPath(path);
+    if (artHit) artists.add(`{"@type":"Person","name":"${artHit.work.artist}"}`);
+    assert(persons.length > 0 && persons.every((p) => artists.has(p)), `${path}: Person only as the cited Book's author or the ImageObject artist, name only`);
     const term = ld.mainEntity as Record<string, unknown>;
     assert(JSON.stringify(term) === JSON.stringify(ld.about), `${path}: about and mainEntity are the same DefinedTerm`);
     assert(term["@type"] === "DefinedTerm" && term["@id"] === `${DIG_URL}#${c.key}` && term.url === absUrl(path) && term.termCode === c.key && term.name === c.name, `${path}: planet DefinedTerm @id and url`);
@@ -462,9 +484,15 @@ items.forEach((it, i) => {
     const days = men.filter((m) => m["@type"] === "DayOfWeek");
     assert(days.length === 1 && days[0]["@id"] === `https://schema.org/${c.day}` && days[0].name === c.day, `${path}: DayOfWeek ${c.day}`);
     const occ = men.filter((m) => m["@type"] === "Occupation");
-    assert(occ.length === c.occupations.length && occ.every((o) => Object.keys(o).sort().join(",") === "@type,description,name"), `${path}: Occupation name + description only`);
+    assert(occ.length === c.occupations.length && occ.every((o) => {
+      const k = Object.keys(o).sort().join(",");
+      return k === "@type,description,name" || k === "@type,description,name,sameAs";
+    }), `${path}: Occupation name + description only`);
     const places = men.filter((m) => m["@type"] === "Country" || m["@type"] === "City");
-    assert(places.every((pl) => Object.keys(pl).sort().join(",") === "@type,description,name"), `${path}: Country/City name + description only`);
+    assert(places.every((pl) => {
+      const k = Object.keys(pl).sort().join(",");
+      return k === "@type,description,name" || k === "@type,description,name,sameAs";
+    }), `${path}: Country/City name + description only`);
     assert(!BANNED.test(text) && !/advice/i.test(text), `${path}: no banned wording in JSON-LD`);
     assert(JSON.stringify(routeHead(path + "/")) === JSON.stringify(h), `${path}/: trailing slash is the same page`);
   }
@@ -544,6 +572,85 @@ if (bundle && existsSync(bundle)) {
     assert(!/MonetaryAmount|priceCurrency|"Offer"|@type":"Offer|CunningMan AstroTrading/.test(s), `${f}: bundle free of Offer/price/firm brand`);
   }
   console.log(`bundle scanned: ${files.length} files in ${bundle}`);
+}
+
+
+// HUB-ART-001: page stills, ImageObject, credits, siblings, sample learn-more.
+{
+  const artDir = new URL("../public/art/", import.meta.url);
+  const pageSrc = readFileSync(new URL("../src/components/PageArt.tsx", import.meta.url), "utf8");
+  const layoutSrc = readFileSync(new URL("../src/components/SiteLayout.tsx", import.meta.url), "utf8");
+  const digSrc = readFileSync(new URL("../src/pages/site/DignitiesPage.tsx", import.meta.url), "utf8");
+  assert(/<PageArt \/>/.test(layoutSrc), "SiteLayout renders PageArt");
+  assert(/work\.sourceRecord/.test(pageSrc) && /Source record/.test(pageSrc), "PageArt links the visible credit to the source record");
+  assert(/assignment\.siblings/.test(pageSrc), "PageArt renders art siblings");
+  assert(/Learn more/.test(digSrc) && /learnMoreForCatalog/.test(digSrc), "dignities pages render sample learn-more links");
+  assert(!/sickness/i.test(LEARN_MORE.map((r) => r.term).join(" ")), "learn-more sample has no sickness terms");
+
+  const lib = routeHead("/library").jsonLd!;
+  assert(!JSON.stringify(lib).includes("ImageObject") && !lib.primaryImageOfPage, "/library: no placeholder ImageObject (D-5)");
+  for (const b of LIBRARY_BOOKS) {
+    const h = routeHead(`/library/${b.id}`);
+    if (h.jsonLd) assert(!JSON.stringify(h.jsonLd).includes("ImageObject"), `/library/${b.id}: no ImageObject (D-5)`);
+  }
+
+  const CC0_DEED = "https://creativecommons.org/publicdomain/zero/1.0/deed.en";
+  for (const a of ART_ASSIGNMENTS) {
+    const work = ART_WORKS[a.artId];
+    const shipped = SHIPPED_FILES.has(work.file);
+    const fileOk = existsSync(new URL(work.file, artDir));
+    if (shipped) assert(fileOk, `${work.file} is present under public/art/`);
+    const hit = artForPath(a.path);
+    if (!shipped) {
+      assert(hit === null, `${a.path}: unshipped still is not attached`);
+      const ld = routeHead(a.path).jsonLd;
+      if (ld) assert(!ld.primaryImageOfPage, `${a.path}: no ImageObject when the still was not shipped`);
+      continue;
+    }
+    assert(hit && hit.work.id === work.id, `${a.path}: art assignment`);
+    const h = routeHead(a.path);
+    assert(h.jsonLd, `${a.path}: has JSON-LD`);
+    const ld = h.jsonLd!;
+    const img = ld.primaryImageOfPage as Record<string, unknown> | undefined;
+    assert(img && img["@type"] === "ImageObject", `${a.path}: primaryImageOfPage is ImageObject`);
+    const content = String(img.contentUrl);
+    assert(content === absUrl(contentPath(work)) && content.startsWith(`${SITE_ORIGIN}/art/`), `${a.path}: contentUrl is same-origin /art/`);
+    assert(img.url === work.sourceRecord, `${a.path}: ImageObject.url is the source record`);
+    assert(img.license === work.license, `${a.path}: license is present`);
+    const alp = String(img.acquireLicensePage);
+    if (work.licenseKind === "CC0") assert(alp === CC0_DEED, `${a.path}: acquireLicensePage is the CC0 deed`);
+    else assert(alp === work.sourceRecord && /commons\.wikimedia\.org\/wiki\/File:/.test(alp), `${a.path}: acquireLicensePage is the Commons file page`);
+    assert(!/shop|cart|buy|purchase|price/i.test(alp) && !/offer/i.test(JSON.stringify(img)), `${a.path}: acquireLicensePage is not a shop or Offer`);
+    const about = img.about;
+    const abouts = Array.isArray(about) ? about : [about];
+    for (const id of a.about) assert(abouts.includes(id), `${a.path}: about includes ${id}`);
+    const creator = img.creator as Record<string, unknown>;
+    assert(creator && creator["@type"] === "Person" && creator.name === work.artist && Object.keys(creator).sort().join(",") === "@type,name", `${a.path}: creator is Person, name only`);
+    if (work.dateCreated) {
+      assert(img.dateCreated === work.dateCreated, `${a.path}: dateCreated is the artwork date`);
+      assert(!String(img.dateCreated).startsWith("2019"), `${a.path}: dateCreated is not the upload timestamp`);
+    } else {
+      assert(img.dateCreated === undefined, `${a.path}: no dateCreated when the source states no artwork date`);
+    }
+    assert(img.creditText === creditText(work), `${a.path}: creditText`);
+    const text = JSON.stringify(ld);
+    assert(!/"Offer"|MonetaryAmount|"price"/.test(text), `${a.path}: no Offer, price or MonetaryAmount`);
+    for (const sib of a.siblings) {
+      assert(hit.assignment.siblings.includes(sib), `${a.path}: art sibling ${sib}`);
+    }
+  }
+
+  // Sample learn-more is the accepted set only (D-8); UNMAPPED names are not linked.
+  assert(LEARN_MORE.length === 23, "learn-more sample has 23 mapped rows");
+  const unmapped = ["Ferraria", "Cullen", "Ingoldstad", "Constantia", "Norimberge", "Clownes", "Night-farmers", "Pulse", "Willow", "Woolf-bane", "Chrystall"];
+  for (const name of unmapped) assert(!learnMoreForName(name), `UNMAPPED ${name} has no learn-more row`);
+  const jup = routeHead("/dignities/jupiter").jsonLd!;
+  const mentions = ((jup.hasPart as Record<string, unknown>).mentions ?? []) as Record<string, unknown>[];
+  const judges = mentions.find((m) => m["@type"] === "Occupation" && m.name === "Judges");
+  assert(judges && judges.sameAs === "https://www.wikidata.org/wiki/Q16533", "/dignities/jupiter: Judges Occupation has sameAs");
+  const italyPage = routeHead("/dignities/sun").jsonLd!;
+  const italy = (((italyPage.hasPart as Record<string, unknown>).mentions ?? []) as Record<string, unknown>[]).find((m) => m.name === "Italy");
+  assert(italy && italy["@type"] === "Country" && italy.sameAs === "https://www.wikidata.org/wiki/Q38", "/dignities/sun: Italy Country has sameAs");
 }
 
 console.log(`check:schema OK — ${n} assertions`);

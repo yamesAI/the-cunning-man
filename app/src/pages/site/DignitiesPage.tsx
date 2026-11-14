@@ -14,6 +14,7 @@ import {
   type PlanetCatalog,
 } from "@/site/dignities";
 import { useMeta } from "@/hooks/useMeta";
+import { learnMoreForCatalog } from "@/site/learnMore";
 
 const P = (p: PlanetKey) => (
   <span title={PLANET_LABEL[p]}>
@@ -39,6 +40,30 @@ const ScanLink = ({ label }: { label: string }) => (
     {label} ↗
   </a>
 );
+
+
+function CatalogLearnMore({ catalog }: { catalog: PlanetCatalog }) {
+  const rows = learnMoreForCatalog([
+    catalog.occupations.join(" "),
+    catalog.places.map((pl) => pl.name).join(" "),
+    ...catalog.entries.map((e) => `${e.heading} ${e.text}`),
+  ]);
+  if (rows.length === 0) return null;
+  return (
+    <p className="text-[12px] text-ink-soft mt-3 max-w-3xl">
+      Learn more:{" "}
+      {rows.map((r, i) => (
+        <span key={r.term}>
+          {i > 0 ? " · " : ""}
+          {r.term}{" "}
+          <a href={r.url} target="_blank" rel="noopener noreferrer" className="underline hover:text-seal">
+            {r.entity} ↗
+          </a>
+        </span>
+      ))}
+    </p>
+  );
+}
 
 function CatalogEntries({ catalog }: { catalog: PlanetCatalog }) {
   return (
@@ -118,6 +143,7 @@ function PlanetPage({ catalog }: { catalog: PlanetCatalog }) {
       </p>
       <p className="text-[12px] text-ink-soft mb-3">Also called: {catalog.alternateName.join(", ")}.</p>
       <CatalogEntries catalog={catalog} />
+      <CatalogLearnMore catalog={catalog} />
       <nav aria-label="Other planets" className="text-[13px] mt-8 flex flex-wrap gap-x-3 gap-y-1">
         {siblings.map((p) => (
           <Link key={p.key} to={planetPath(p.key)} className="underline">{p.name}</Link>
@@ -240,6 +266,7 @@ function DignitiesIndex() {
           </p>
           <p className="text-[12px] text-ink-soft mb-3">Also called: {c.alternateName.join(", ")}.</p>
           <CatalogEntries catalog={c} />
+          <CatalogLearnMore catalog={c} />
         </section>
       ))}
       </div>

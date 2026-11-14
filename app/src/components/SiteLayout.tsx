@@ -5,6 +5,7 @@ import { Link, NavLink, useLocation } from "react-router";
 import { useSky } from "@/sky/sky-context";
 import { CITIES } from "@/data/cities";
 import { inIframe } from "@/lib/env";
+import { PageArt } from "@/components/PageArt";
 import { tzForLocation } from "@/astro/engine";
 import { wallParts, tzOffsetLabel, pad } from "@/astro/format";
 
@@ -108,9 +109,17 @@ export function SiteLayout({ children }: { children: ReactNode }) {
         </div>
       </header>
       {onClock ? (
-        children
+        <div>
+          <div className="max-w-6xl mx-auto px-4 pt-4">
+            <PageArt />
+          </div>
+          {children}
+        </div>
       ) : (
-        <main className="max-w-6xl mx-auto px-4 py-6">{children}</main>
+        <main className="max-w-6xl mx-auto px-4 py-6">
+          <PageArt />
+          {children}
+        </main>
       )}
       <footer className="border-t-4 border-double border-line bg-parchment-deep mt-8">
         <div className="max-w-6xl mx-auto px-4 py-4 text-[12px] text-ink-soft flex flex-wrap gap-x-6 gap-y-1">
