@@ -460,9 +460,9 @@ function pageImageObject(pathname: string): Json | null {
     license: work.license,
     acquireLicensePage: work.acquireLicensePage,
     creditText: creditText(work),
-    creator: { "@type": "Person", name: work.artist },
     about,
   };
+  if (work.creatorName) img.creator = { "@type": "Person", name: work.creatorName };
   if (work.dateCreated) img.dateCreated = work.dateCreated;
   return img;
 }
