@@ -13,7 +13,7 @@ import {
   LILLY_TABLE_TERMS, PLANET_CATALOGS, planetPageDescription, planetPageName, planetPath, signDignities,
 } from "../src/site/dignities";
 import { ART_ASSIGNMENTS, ART_WORKS, SHIPPED_FILES, artForPath, contentPath, creditText } from "../src/site/art";
-import { LEARN_MORE, learnMoreForName } from "../src/site/learnMore";
+import { LEARN_MORE, learnMoreForCatalog, learnMoreForName, occupationHaystack } from "../src/site/learnMore";
 
 let n = 0;
 function assert(cond: unknown, msg: string) {
@@ -460,7 +460,7 @@ items.forEach((it, i) => {
     const persons = [...text.matchAll(/\{"@type":"Person"[^}]*\}/g)].map((m) => m[0]);
     const artists = new Set([`{"@type":"Person","name":"${lib.author}"}`]);
     const artHit = artForPath(path);
-    if (artHit) artists.add(`{"@type":"Person","name":"${artHit.work.artist}"}`);
+    if (artHit?.work.creatorName) artists.add(`{"@type":"Person","name":"${artHit.work.creatorName}"}`);
     assert(persons.length > 0 && persons.every((p) => artists.has(p)), `${path}: Person only as the cited Book's author or the ImageObject artist, name only`);
     const term = ld.mainEntity as Record<string, unknown>;
     assert(JSON.stringify(term) === JSON.stringify(ld.about), `${path}: about and mainEntity are the same DefinedTerm`);
@@ -624,8 +624,16 @@ if (bundle && existsSync(bundle)) {
     const about = img.about;
     const abouts = Array.isArray(about) ? about : [about];
     for (const id of a.about) assert(abouts.includes(id), `${a.path}: about includes ${id}`);
-    const creator = img.creator as Record<string, unknown>;
-    assert(creator && creator["@type"] === "Person" && creator.name === work.artist && Object.keys(creator).sort().join(",") === "@type,name", `${a.path}: creator is Person, name only`);
+    const creator = img.creator as Record<string, unknown> | undefined;
+    if (work.id === "metzger-clock") {
+      assert(creator === undefined, `${a.path}: clock ImageObject has no single-Person creator`);
+      const credit = String(img.creditText);
+      assert(/probably by Jeremias Metzger/.test(credit) && /[Ss]igned by Caspar Behaim/.test(credit), `${a.path}: credit names Metzger (probably) and Behaim (signed by)`);
+    } else if (work.creatorName) {
+      assert(creator && creator["@type"] === "Person" && creator.name === work.creatorName && Object.keys(creator).sort().join(",") === "@type,name", `${a.path}: creator is Person, name only`);
+    } else {
+      assert(creator === undefined, `${a.path}: no ImageObject.creator when creatorName is omitted`);
+    }
     if (work.dateCreated) {
       assert(img.dateCreated === work.dateCreated, `${a.path}: dateCreated is the artwork date`);
       assert(!String(img.dateCreated).startsWith("2019"), `${a.path}: dateCreated is not the upload timestamp`);
@@ -651,6 +659,26 @@ if (bundle && existsSync(bundle)) {
   const italyPage = routeHead("/dignities/sun").jsonLd!;
   const italy = (((italyPage.hasPart as Record<string, unknown>).mentions ?? []) as Record<string, unknown>[]).find((m) => m.name === "Italy");
   assert(italy && italy["@type"] === "Country" && italy.sameAs === "https://www.wikidata.org/wiki/Q38", "/dignities/sun: Italy Country has sameAs");
+
+  const sunCat = PLANET_CATALOGS.find((c) => c.key === "sun")!;
+  const merCat = PLANET_CATALOGS.find((c) => c.key === "mercury")!;
+  assert(!learnMoreForCatalog(sunCat).some((r) => r.term === "Poets"), "/dignities/sun: no Poets learn-more (Names prose is not a signification)");
+  assert(learnMoreForCatalog(merCat).some((r) => r.term === "Poets"), "/dignities/mercury: Poets learn-more remains (occupation list)");
+  for (const c of PLANET_CATALOGS) {
+    const hay = occupationHaystack(c);
+    for (const r of learnMoreForCatalog(c).filter((row) => row.kind === "occupation")) {
+      const escaped = r.term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      assert(new RegExp(`(?<![A-Za-z])${escaped}(?![A-Za-z])`).test(hay), `${c.key}: occupation learn-more ${r.term} is drawn only from occupation/profession entries`);
+    }
+  }
+  const names = sunCat.entries.find((e) => e.heading === "Names")?.text ?? "";
+  assert(/Poets/.test(names), "/dignities/sun: Names prose still mentions Poets in the catalog (matcher must ignore it)");
+
+  const artSrc = readFileSync(new URL("../src/site/art.ts", import.meta.url), "utf8");
+  const cellCredit = creditText(ART_WORKS["cellarius-harmonia"]);
+  assert(!/1708/.test(artSrc) && !/1708/.test(cellCredit) && !/1708/.test(String(routeHead("/synastry").jsonLd?.primaryImageOfPage && JSON.stringify(routeHead("/synastry").jsonLd))), "Cellarius credit and art.ts never say 1708");
+  assert(/1660–61 \(Amsterdam: Johannes Janssonius\)/.test(cellCredit), "Cellarius date is 1660–61 (Amsterdam: Johannes Janssonius)");
+  assert(!/Children of the Planets/.test(artSrc) && !/Children of the Planets/.test(pageSrc) && !/Children of the Planets/.test(JSON.stringify(routeHead("/dignities/sun").jsonLd)), "no Children of the Planets wording");
 }
 
 console.log(`check:schema OK — ${n} assertions`);

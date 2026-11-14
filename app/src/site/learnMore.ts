@@ -60,11 +60,36 @@ export function learnMoreInText(text: string): LearnMoreRow[] {
   return LEARN_MORE.filter((r) => appears(r.term, text));
 }
 
-export function learnMoreForCatalog(parts: string[]): LearnMoreRow[] {
-  const hay = parts.join("\n");
+/** Lilly list headings for trades and stations — not "Names" or manners prose. */
+export function isOccupationOrProfessionHeading(heading: string): boolean {
+  const h = heading.toLowerCase();
+  return /\bprofession/.test(h) || h.includes("quality of men") || h.includes("men and their quality") || h === "qualities of men and women";
+}
+
+export interface LearnMoreCatalog {
+  occupations: string[];
+  places: { name: string }[];
+  entries: { heading: string; text: string; sickness?: boolean }[];
+}
+
+/** Occupation terms match occupations and profession entries only, never Names prose. */
+export function occupationHaystack(catalog: LearnMoreCatalog): string {
+  return [
+    catalog.occupations.join(" "),
+    ...catalog.entries.filter((e) => isOccupationOrProfessionHeading(e.heading)).map((e) => e.text),
+  ].join("\n");
+}
+
+export function learnMoreForCatalog(catalog: LearnMoreCatalog): LearnMoreRow[] {
+  const occHay = occupationHaystack(catalog);
+  const otherHay = [
+    catalog.places.map((pl) => pl.name).join(" "),
+    ...catalog.entries.filter((e) => e.heading !== "Names" && !e.sickness).map((e) => e.text),
+  ].join("\n");
   const seen = new Set<string>();
   const out: LearnMoreRow[] = [];
   for (const r of LEARN_MORE) {
+    const hay = r.kind === "occupation" ? occHay : otherHay;
     if (appears(r.term, hay) && !seen.has(r.term)) {
       seen.add(r.term);
       out.push(r);

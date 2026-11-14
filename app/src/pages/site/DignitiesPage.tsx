@@ -43,11 +43,7 @@ const ScanLink = ({ label }: { label: string }) => (
 
 
 function CatalogLearnMore({ catalog }: { catalog: PlanetCatalog }) {
-  const rows = learnMoreForCatalog([
-    catalog.occupations.join(" "),
-    catalog.places.map((pl) => pl.name).join(" "),
-    ...catalog.entries.map((e) => `${e.heading} ${e.text}`),
-  ]);
+  const rows = learnMoreForCatalog(catalog);
   if (rows.length === 0) return null;
   return (
     <p className="text-[12px] text-ink-soft mt-3 max-w-3xl">
