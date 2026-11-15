@@ -21,6 +21,13 @@ export default function PressRelease() {
             {para}
           </p>
         ))}
+        {p.links ? (
+          <nav aria-label="Related pages" className="text-[13px] flex flex-wrap gap-x-3 gap-y-1 mb-3">
+            {p.links.map((l) => (
+              <Link key={l.to} to={l.to} className="underline hover:text-seal">{l.label}</Link>
+            ))}
+          </nav>
+        ) : null}
         <p className="text-[13px] text-center font-bold mt-4 font-smallcaps">— 30 —</p>
         <div className="border-t border-line mt-4 pt-3 text-[12px] text-ink-soft">
           <p className="font-bold font-smallcaps">About The Cunning Man</p>

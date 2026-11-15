@@ -47,6 +47,14 @@ For entertainment and study — not financial, medical, or legal advice.
 - /dignities/venus — Venus: a study page from Lilly, Christian Astrology, 1647, Book 1.
 - /dignities/mercury — Mercury: a study page from Lilly, Christian Astrology, 1647, Book 1.
 - /dignities/moon — Moon: a study page from Lilly, Christian Astrology, 1647, Book 1.
+- /charts — Charts: study pages reading public figures' natal charts by Lilly's essential
+  dignities, birth data from Astro-Databank with Rodden rating; for study and entertainment.
+- /charts/charles-iii — King Charles III: a study page reading the natal chart by Lilly's essential dignities, birth data from Astro-Databank, Rodden rating A.
+- /charts/liza-minnelli — Liza Minnelli: a study page reading the natal chart by Lilly's essential dignities, birth data from Astro-Databank, Rodden rating AA.
+- /charts/billy-idol — Billy Idol: a study page reading the natal chart by Lilly's essential dignities, birth data from Astro-Databank, Rodden rating A.
+- /charts/queen-latifah — Queen Latifah: a study page reading the natal chart by Lilly's essential dignities, birth data from Astro-Databank, Rodden rating AA.
+- /articles — Articles: the editorial programme in four beats (astro celebrity at /charts,
+  businesses, magic and occult), for study and entertainment.
 
 ## Technical notes for agents
 

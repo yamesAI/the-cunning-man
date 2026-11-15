@@ -22,6 +22,7 @@ const NAV = [
   { to: "/press", label: "Press" },
   { to: "/library", label: "Library" },
   { to: "/dignities", label: "Dignities" },
+  { to: "/charts", label: "Charts" },
 ];
 
 // (inIframe lives in src/lib/env.ts so this file only exports components.)

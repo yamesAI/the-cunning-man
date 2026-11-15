@@ -7,6 +7,7 @@ export interface PressItem {
   dateline: string;
   excerpt: string;
   body: string[];    // paragraphs
+  links?: { to: string; label: string }[]; // visible hub links under the body (R-CHARTS-001 §9)
 }
 
 export const PRESS: PressItem[] = [
@@ -81,6 +82,102 @@ export const PRESS: PressItem[] = [
       "Visitors may draw a single rune for a swift answer or the three-Norn spread — what has been, what is, and what may come. Each stave is read plainly: its core meaning first, then its counsel in love and in money, in the manner of the old cunning-folk readers.",
       "“The runes were always a poor man's oracle — carved on sticks, cast on cloth,” said the keeper. “They cost nothing then. They cost nothing now.”",
       "The cast is free and instant at cunning-man.vercel.app/runes.",
+    ],
+  },
+  // R-CHARTS-001 §9 (owner t695u): chart releases, appended so PRESS[0] stays "launch".
+  // Wording is a draft for the owner to see before any deploy.
+  {
+    slug: "charts",
+    title: "The Cunning Man Opens Charts: Study Pages Reading Public Figures by Lilly's Dignities",
+    date: "November 15, 2026",
+    dateline: "LONDON",
+    excerpt:
+      "A new free section reads the natal charts of public figures by William Lilly's 1647 essential dignities, using Astro-Databank birth data with its Rodden rating, for study and entertainment.",
+    body: [
+      "The Cunning Man today opened Charts, a free section of study pages that read the natal charts of public figures by the essential dignities William Lilly set out in Christian Astrology (1647).",
+      "Every page takes its birth date, time and place from the figure's Astro-Databank record and shows the Rodden rating beside it; only records rated AA, A or B are used. The positions are computed in the browser by the same engine as the site's natal page, and each planet is described in Lilly's terms: house, exaltation, triplicity, term and face, or detriment, fall and peregrine.",
+      "The first four pages read the charts of King Charles III, Liza Minnelli, Billy Idol and Queen Latifah. The pages describe the chart only. They say nothing about anyone's private life and make no predictions.",
+      "Visitors can cast their own chart on the natal page and compare it with Lilly's tables on the Dignities page.",
+    ],
+    links: [
+      { to: "/charts", label: "Charts" },
+      { to: "/natal", label: "Cast your own chart" },
+      { to: "/dignities", label: "Dignities and Correspondences" },
+    ],
+  },
+  {
+    slug: "chart-charles-iii",
+    title: "On His 78th Birthday, a Study of King Charles III's Chart by Lilly's Rules",
+    date: "November 15, 2026",
+    dateline: "LONDON",
+    excerpt:
+      "A study page reads the King's natal chart, a night chart with Venus and Jupiter in their own houses, from Astro-Databank data rated A.",
+    body: [
+      "The King marked his 78th birthday on 14 November 2026. The Cunning Man has published a study page reading his natal chart by William Lilly's essential dignities.",
+      "The page uses the Astro-Databank record (rated A, from a news report): 14 November 1948, 21:14 GMT, London. By Lilly's rules it is a night chart. Venus stands in her own house of Libra and Jupiter in his own house of Sagittarius, in its last minutes before Capricorn; the Moon is in her exaltation in Taurus.",
+      "The page reads the chart only and links each planet to its page in the site's Dignities section.",
+    ],
+    links: [
+      { to: "/charts/charles-iii", label: "Study page: King Charles III" },
+      { to: "/natal", label: "Cast your own chart" },
+      { to: "/dignities/venus", label: "Venus" },
+      { to: "/dignities/jupiter", label: "Jupiter" },
+      { to: "/dignities/moon", label: "Moon" },
+    ],
+  },
+  {
+    slug: "chart-liza-minnelli",
+    title: "Liza Minnelli's Chart, Read by the Old Rules, as Her Life Story Heads to the Screen",
+    date: "November 15, 2026",
+    dateline: "LONDON",
+    excerpt:
+      "A study page reads her day chart, with the Moon in her own house of Cancer, from Astro-Databank data rated AA.",
+    body: [
+      "Liza Minnelli has announced that her autobiography will be adapted for the screen. The Cunning Man has published a study page reading her natal chart by William Lilly's essential dignities.",
+      "The page uses the Astro-Databank record (rated AA, quoted birth certificate or record): 12 March 1946, 07:58 PST, Los Angeles. By Lilly's rules it is a day chart, and the Moon stands in her own house of Cancer. The record also notes a 07:28 variant; the page uses the rated time.",
+      "The page reads the chart only and links each planet to its page in the site's Dignities section.",
+    ],
+    links: [
+      { to: "/charts/liza-minnelli", label: "Study page: Liza Minnelli" },
+      { to: "/natal", label: "Cast your own chart" },
+      { to: "/dignities/moon", label: "Moon" },
+    ],
+  },
+  {
+    slug: "chart-billy-idol",
+    title: "Hall of Fame Night: A Study of Billy Idol's Natal Chart by Lilly's Dignities",
+    date: "November 15, 2026",
+    dateline: "LOS ANGELES",
+    excerpt:
+      "A study page reads his chart, with Mars in his own house of Scorpio and a sect that turns on the minutes around sunset, from Astro-Databank data rated A.",
+    body: [
+      "Billy Idol is among the new Rock & Roll Hall of Fame inductees honoured at the 14 November 2026 ceremony in Los Angeles. The Cunning Man has published a study page reading his natal chart by William Lilly's essential dignities.",
+      "The page uses the Astro-Databank record (rated A, from memory): 30 November 1955, 16:00 GMT, Stanmore, England. Mars stands in his own house of Scorpio. At that time the Sun is just below the western horizon, so the engine reads a night chart, and the page says plainly that the sect turns on a few minutes of a remembered time.",
+      "The page reads the chart only and links each planet to its page in the site's Dignities section.",
+    ],
+    links: [
+      { to: "/charts/billy-idol", label: "Study page: Billy Idol" },
+      { to: "/natal", label: "Cast your own chart" },
+      { to: "/dignities/mars", label: "Mars" },
+      { to: "/dignities/sun", label: "Sun" },
+    ],
+  },
+  {
+    slug: "chart-queen-latifah",
+    title: "Hall of Fame Night: A Study of Queen Latifah's Natal Chart by Lilly's Dignities",
+    date: "November 15, 2026",
+    dateline: "LOS ANGELES",
+    excerpt:
+      "A study page reads her day chart, with the Sun late in Pisces, from Astro-Databank data rated AA.",
+    body: [
+      "Queen Latifah is among the new Rock & Roll Hall of Fame inductees honoured at the 14 November 2026 ceremony in Los Angeles. The Cunning Man has published a study page reading her natal chart by William Lilly's essential dignities.",
+      "The page uses the Astro-Databank record (rated AA, quoted birth certificate or record): 18 March 1970, 08:02 EST, Newark, New Jersey. By Lilly's rules it is a day chart, with the Sun late in Pisces.",
+      "The page reads the chart only and links each planet to its page in the site's Dignities section.",
+    ],
+    links: [
+      { to: "/charts/queen-latifah", label: "Study page: Queen Latifah" },
+      { to: "/natal", label: "Cast your own chart" },
+      { to: "/dignities/sun", label: "Sun" },
     ],
   },
 ];

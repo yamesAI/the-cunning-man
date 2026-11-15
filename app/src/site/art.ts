@@ -2,6 +2,8 @@
 // Files live in app/public/art/. No art on /library or book pages (D-5).
 // dateCreated is the artwork date from the source only, never an upload time (D-7).
 
+import { CHARTS_PATH, CHART_FIGURES, figurePath } from "./charts";
+
 export const CC0_DEED = "https://creativecommons.org/publicdomain/zero/1.0/deed.en";
 export const CC0_LICENSE = "https://creativecommons.org/publicdomain/zero/1.0/";
 export const PD_MARK = "https://creativecommons.org/publicdomain/mark/1.0/";
@@ -208,7 +210,13 @@ export const ART_ASSIGNMENTS: ArtAssignment[] = [
   assignment("/spells/money", "beham-jupiter", ["/dignities/jupiter", ...BEHAM_PLANETS.filter((p) => p !== "/dignities/jupiter")], [`${ORIGIN}/spells/money`]),
   assignment("/press", "beham-astrologia", ["/", "/dignities", "/press/launch"], [`${ORIGIN}/press`]),
   assignment("/press/launch", "beham-astrologia", ["/", "/dignities", "/press"], [`${ORIGIN}/press/launch`]),
+  // R-CHARTS-001 §6 (D-8): reuse the Apian still from /natal; never a likeness.
+  assignment(CHARTS_PATH, "apian-astronomicum", ["/natal"], [`${ORIGIN}${CHARTS_PATH}`]),
+  ...CHART_FIGURES.map((f) => assignment(figurePath(f.slug), f.artId, ["/natal"], [`${ORIGIN}${figurePath(f.slug)}`])),
 ];
+
+/** R-CHARTS-001 §6/§8: stills that show no person's likeness, the only ones chart pages may use. */
+export const NON_PORTRAIT_ART_IDS = new Set<string>(["apian-astronomicum"]);
 
 const BY_PATH = new Map(ART_ASSIGNMENTS.map((a) => [a.path, a]));
 
