@@ -17,6 +17,14 @@ import {
 } from "../src/site/dignities";
 import { ART_ASSIGNMENTS, ART_WORKS, SHIPPED_FILES, artForPath, contentPath, creditText } from "../src/site/art";
 import { LEARN_MORE, learnMoreForCatalog, learnMoreForName, occupationHaystack } from "../src/site/learnMore";
+import { NON_PORTRAIT_ART_IDS } from "../src/site/art";
+import {
+  ALLOWED_RATINGS, CHARTS_DESCRIPTION, CHARTS_PATH, CHARTS_PRESS_SLUG, CHART_FIGURES,
+  figureChart, figureFromPath, figurePageDescription, figurePageName, figurePath, figureReads, parseAdbCoord,
+} from "../src/site/charts";
+import { ARTICLES, ARTICLES_PATH, ARTICLE_BEATS, articlePath } from "../src/site/articles";
+import { personId } from "../src/site/structuredData";
+import { wallParts } from "../src/astro/format";
 
 let n = 0;
 function assert(cond: unknown, msg: string) {
@@ -33,11 +41,39 @@ const FORBIDDEN_TEXT = [/CunningMan AstroTrading/i, /AstroTrading/i, /\bprop[- ]
 
 // SKY-001 §5: /sky alone may carry featureList (checked exactly below).
 const ALLOWED_KEYS: Record<string, Set<string>> = { "/sky": new Set(["featureList"]) };
-// LIB-001 §4: /library Books alone may name a historical author/translator as
-// Person (name only; checked exactly below). Everywhere else Person stays forbidden.
+// LIB-001 §4: /library, /dignities and the book and planet pages may name a
+// historical author/translator as Person (name only; checked exactly below).
+// Chart subjects are allowed only through PERSON_ALLOWLIST. Everywhere else
+// Person stays forbidden.
 const ALLOWED_TYPES: Record<string, Set<string>> = { "/library": new Set(["Person"]), "/dignities": new Set(["Person"]) };
 for (const c of PLANET_CATALOGS) ALLOWED_TYPES[planetPath(c.key)] = new Set(["Person"]);
 for (const b of LIBRARY_BOOKS) ALLOWED_TYPES[bookPath(b.id)] = new Set(["Person"]);
+
+// PERSON_ALLOWLIST (R-CHARTS-001 §7–§9): the only paths where a full Person
+// node (one with @id) may appear, the role it plays, and its exact @id. Today
+// the one role is "subject": a chart figure, as about/mainEntity of its /charts
+// page and about of its press release. BRUNO-001 adds role "author" entries
+// here; nothing else widens the Person allowance. Place is allowed with the
+// subject only where the catalog types the birthplace as Place (D-7).
+type PersonRole = "subject";
+const PERSON_ALLOWLIST: Record<string, { role: PersonRole; id: string }[]> = {};
+for (const f of CHART_FIGURES) {
+  const entry = { role: "subject" as const, id: personId(f) };
+  for (const path of [figurePath(f.slug), `/press/${f.pressSlug}`]) {
+    PERSON_ALLOWLIST[path] = [entry];
+    ALLOWED_TYPES[path] = new Set(["Person", ...(f.placeType === "Place" ? ["Place"] : [])]);
+  }
+}
+/** Full Person nodes (those carrying @id) anywhere in a JSON-LD graph. */
+function personNodes(v: unknown, out: Record<string, unknown>[] = []): Record<string, unknown>[] {
+  if (Array.isArray(v)) v.forEach((x) => personNodes(x, out));
+  else if (v && typeof v === "object") {
+    const o = v as Record<string, unknown>;
+    if (o["@type"] === "Person" && "@id" in o) out.push(o);
+    Object.values(o).forEach((x) => personNodes(x, out));
+  }
+  return out;
+}
 
 function walk(v: unknown, where: string, allow: Set<string> = new Set(), allowTypes: Set<string> = new Set()) {
   if (Array.isArray(v)) return v.forEach((x, i) => walk(x, `${where}[${i}]`, allow, allowTypes));
@@ -81,7 +117,7 @@ const EXPECT: Record<string, string> = {
   "/": "FAQPage", "/clock": "WebApplication", "/natal": "WebApplication", "/synastry": "WebApplication",
   "/launches": "WebApplication", "/sky": "WebApplication", "/sigil": "WebApplication", "/runes": "WebApplication",
   "/spells/love": "WebPage", "/spells/money": "WebPage", "/press": "CollectionPage", "/library": "CollectionPage",
-  "/dignities": "WebPage",
+  "/dignities": "WebPage", "/charts": "CollectionPage", "/articles": "CollectionPage",
 };
 const canonicals = new Set<string>();
 for (const [path, type] of Object.entries(EXPECT)) {
@@ -639,7 +675,8 @@ assert(routeHead("/library/christian-astrology").jsonLd !== null, "/library/chri
 
 // App.tsx routes all covered
 const app = readFileSync(new URL("../src/App.tsx", import.meta.url), "utf8");
-const routes = [...app.matchAll(/path="([^"]+)"/g)].map((m) => m[1]).filter((r) => r !== "*" && r !== "/press/:slug" && r !== "/dignities/:planet" && r !== "/dignities/*" && r !== "/library/:book" && r !== "/library/*");
+const routes = [...app.matchAll(/path="([^"]+)"/g)].map((m) => m[1]).filter((r) => r !== "*" && r !== "/press/:slug" && r !== "/dignities/:planet" && r !== "/dignities/*" && r !== "/library/:book" && r !== "/library/*"
+  && r !== "/charts/:figure" && r !== "/charts/*" && r !== "/articles/:beat/:slug" && r !== "/articles/*");
 for (const r of routes) assert(EXPECT[r], `App route ${r} has expected structured data`);
 
 // 6. source: index.html WebSite kept, no price fields; no page-level JSON-LD outside the table
@@ -774,6 +811,251 @@ if (bundle && existsSync(bundle)) {
   assert(!/1708/.test(artSrc) && !/1708/.test(cellCredit) && !/1708/.test(String(routeHead("/synastry").jsonLd?.primaryImageOfPage && JSON.stringify(routeHead("/synastry").jsonLd))), "Cellarius credit and art.ts never say 1708");
   assert(/1660–61 \(Amsterdam: Johannes Janssonius\)/.test(cellCredit), "Cellarius date is 1660–61 (Amsterdam: Johannes Janssonius)");
   assert(!/Children of the Planets/.test(artSrc) && !/Children of the Planets/.test(pageSrc) && !/Children of the Planets/.test(JSON.stringify(routeHead("/dignities/sun").jsonLd)), "no Children of the Planets wording");
+}
+
+
+// R-CHARTS-001 §8–§9 (D-1–D-10) and R-EDITORIAL-001 §9: /charts, figure pages,
+// chart press releases, /articles. Guardrails (owner t683u/t690u/t697u):
+// Astro-Databank Rodden AA/A/B only, no gossip, health, death, pregnancy or
+// scandal wording, no trading or price wording, no Offer, no likeness.
+{
+  const CH_URL = absUrl(CHARTS_PATH);
+  const ADB = "https://www.astro.com/astro-databank/";
+  const BANNED = /\btrad(e|es|er|ers|ing)\b|\bentr(y|ies)\b|\bexit|signal|\bbuy\b|\bsell\b|\bedge\b|win rate|profit|market|ticker|funded|prop[- ]?firm|advice|disclaimer|forecast|do not trade|hours not to trade|price|financ|invest|\bstocks?\b|\bshares?\b|\bIPO\b|dividend|health|death|\bdie[sd]?\b|pregnan|illness|diagnos|scandal|divorce|rumou?r|gossip/i;
+  const stripDisclaimer = (t: string) => t.replace(/For entertainment &(amp;)? study\. Not financial, medical, or legal advice\./g, "");
+  const ISO = /^\d{4}-\d{2}-\d{2}$/;
+  const sitemap = readFileSync(new URL("../public/sitemap.xml", import.meta.url), "utf8");
+  const llms = readFileSync(new URL("../public/llms.txt", import.meta.url), "utf8");
+  const pageSrc = readFileSync(new URL("../src/pages/site/ChartsPage.tsx", import.meta.url), "utf8");
+  const types = (ld: unknown) => [...JSON.stringify(ld).matchAll(/"@type":"([^"]+)"/g)].map((m) => m[1]);
+
+  // /charts CollectionPage + ItemList
+  const idx = routeHead(CHARTS_PATH).jsonLd!;
+  assert(idx["@type"] === "CollectionPage" && idx.isAccessibleForFree === true && idx.description === CHARTS_DESCRIPTION, "/charts: CollectionPage, free, description");
+  assert(Object.keys(idx).sort().join(",") === "@context,@type,description,inLanguage,isAccessibleForFree,isPartOf,mainEntity,name,primaryImageOfPage,relatedLink,url", "/charts: only the §7 properties plus primaryImageOfPage");
+  const list = idx.mainEntity as Record<string, unknown>;
+  const els = list.itemListElement as Record<string, unknown>[];
+  assert(CHART_FIGURES.length === 4 && list["@type"] === "ItemList" && list.numberOfItems === CHART_FIGURES.length && els.length === CHART_FIGURES.length, "/charts: ItemList size equals the catalog (4)");
+  els.forEach((el, i) => {
+    const f = CHART_FIGURES[i];
+    assert(el["@type"] === "ListItem" && el.position === i + 1 && el.name === f.name && el.url === absUrl(figurePath(f.slug)), `/charts item ${i}: position, name, url`);
+  });
+  assert(JSON.stringify(idx.relatedLink) === JSON.stringify([absUrl("/natal"), absUrl("/dignities")]), "/charts: relatedLink /natal and /dignities");
+  assert(personNodes(idx).length === 0 && !types(idx).includes("Place"), "/charts: no Person or Place on the collection");
+  assert(CHART_FIGURES.map((f) => f.name).join("|") === "King Charles III|Liza Minnelli|Billy Idol|Queen Latifah", "/charts: exactly the four launch figures");
+
+  // Research cross-check (R-CHARTS-001 §4, PyEphem): same sign, within 0°10′.
+  const XCHECK: Record<string, { sect: "day" | "night"; pos: string[] }> = {
+    "charles-iii": { sect: "night", pos: ["22 25 scorpio", "0 25 taurus", "6 57 scorpio", "16 23 libra", "20 56 sagittarius", "29 53 sagittarius", "5 16 virgo"] },
+    "liza-minnelli": { sect: "day", pos: ["21 28 pisces", "19 08 cancer", "9 01 aries", "1 00 aries", "16 06 cancer", "26 03 libra", "18 00 cancer"] },
+    "billy-idol": { sect: "night", pos: ["7 40 sagittarius", "21 19 gemini", "5 28 sagittarius", "0 38 capricorn", "1 02 scorpio", "1 00 virgo", "25 25 scorpio"] },
+    "queen-latifah": { sect: "day", pos: ["27 31 pisces", "7 33 leo", "22 38 pisces", "10 20 aries", "8 11 taurus", "4 52 scorpio", "6 34 taurus"] },
+  };
+  const ORDER = ["sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn"] as const;
+  const SIGN_ORDER = ["aries", "taurus", "gemini", "cancer", "leo", "virgo", "libra", "scorpio", "sagittarius", "capricorn", "aquarius", "pisces"];
+
+  const STATUS_KEYS = "@context,@type,about,breadcrumb,citation,description,inLanguage,isAccessibleForFree,isBasedOn,isPartOf,mainEntity,name,primaryImageOfPage,relatedLink,url";
+  const charts: Record<string, ReturnType<typeof figureChart>> = {};
+  for (const f of CHART_FIGURES) {
+    const path = figurePath(f.slug);
+    const where = path;
+    // catalog: Astro-Databank data and identity
+    assert((ALLOWED_RATINGS as readonly string[]).includes(f.roddenRating) && ["AA", "A", "B"].includes(f.roddenRating), `${where}: Rodden rating ${f.roddenRating} is AA, A or B`);
+    assert(f.adbUrl.startsWith(ADB) && f.adbWikiUrl.startsWith("https://www.astro.com/wiki/astro-databank/index.php?title=") && f.adbWikiUrl.endsWith(f.adbUrl.slice(ADB.length)), `${where}: Astro-Databank URL and the wiki record read`);
+    assert(ISO.test(f.birthDate) && /^\d{2}:\d{2}$/.test(f.birthTimeText) && /^[A-Z]{3}$/.test(f.tzAbbr), `${where}: ISO date, HH:MM time, zone abbreviation`);
+    assert(ISO.test(f.adbLastEdit) && ISO.test(f.verifiedOn) && f.dataSource.length > 0 && f.collector.length > 0, `${where}: record last edit, read date, data source, collector`);
+    const title = decodeURIComponent(f.wikipediaUrl.replace("https://en.wikipedia.org/wiki/", ""));
+    const ruled = title.toLowerCase().replace(/[(),]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    assert(ruled === f.slug, `${where}: slug follows the Wikipedia title rule (${ruled})`);
+    assert(/^Q\d+$/.test(f.wikidataId) && /^https:\/\/en\.wikipedia\.org\/wiki\//.test(f.placeSameAs), `${where}: Wikidata id and birthplace Wikipedia URL`);
+    assert(f.placeType === (f.slug === "billy-idol" ? "Place" : "City"), `${where}: D-7 birthplace type`);
+    assert(ISO.test(f.hook.date) && f.hook.url.startsWith("https://") && f.hook.outlet.length > 0, `${where}: dated hook with outlet and URL`);
+    assert(NON_PORTRAIT_ART_IDS.has(f.artId), `${where}: art id on the non-portrait allowlist`);
+    assert(PRESS.some((p) => p.slug === f.pressSlug), `${where}: pressSlug ${f.pressSlug} exists in PRESS`);
+    const [lat, lng] = f.latLongText.split(",").map(parseAdbCoord);
+    assert(Math.abs(lat) <= 90 && Math.abs(lng) <= 180, `${where}: Astro-Databank coordinates parse`);
+
+    // engine: the record's clock time and zone match the place's historical zone; Research cross-check
+    const chart = figureChart(f);
+    charts[f.slug] = chart;
+    assert(chart.wallClock.startsWith(`${f.birthTimeText}:`), `${where}: engine wall clock ${chart.wallClock} equals the record's ${f.birthTimeText} ${f.tzAbbr}`);
+    const wp = wallParts(chart.date, chart.tzName);
+    assert(`${wp.year}-${String(wp.month + 1).padStart(2, "0")}-${String(wp.day).padStart(2, "0")}` === f.birthDate, `${where}: engine local date equals the record's date`);
+    const x = XCHECK[f.slug];
+    assert(chart.sect === x.sect, `${where}: sect ${chart.sect} matches the cross-check ${x.sect}`);
+    ORDER.forEach((key, i) => {
+      const [d, m, sign] = x.pos[i].split(" ");
+      const want = SIGN_ORDER.indexOf(sign) * 30 + Number(d) + Number(m) / 60;
+      const b = chart.bodies.find((y) => y.key === key)!;
+      assert(b.sign === sign, `${where}: ${key} sign ${b.sign} matches the cross-check ${sign}`);
+      assert(Math.abs(b.lon - want) <= 10 / 60, `${where}: ${key} within 0°10′ of the cross-check`);
+    });
+    const reads = figureReads(chart);
+    assert(reads.length === 7 && reads.map((r) => r.key).join(",") === PLANET_CATALOGS.map((c) => c.key).join(","), `${where}: seven traditional planets read, each with a /dignities page`);
+    const visible = stripDisclaimer([f.name, f.hook.sentence, f.dataNote ?? "", figurePageName(f), figurePageDescription(f), ...reads.map((r) => `${r.position} ${r.condition}`)].join(" "));
+    assert(!BANNED.test(visible), `${where}: no banned wording in visible copy (${visible.match(BANNED)?.[0]})`);
+
+    // JSON-LD
+    const h = routeHead(path);
+    assert(h.jsonLd, `${where}: has JSON-LD`);
+    const ld = h.jsonLd!;
+    const text = JSON.stringify(ld);
+    assert(ld["@type"] === "WebPage" && ld.name === figurePageName(f) && ld.description === figurePageDescription(f), `${where}: WebPage (D-1), name, description`);
+    assert(h.canonical === absUrl(path) && ld.url === h.canonical, `${where}: canonical per slug`);
+    assert(Object.keys(ld).sort().join(",") === STATUS_KEYS, `${where}: only the §7 properties`);
+    assert(ld.isAccessibleForFree === true, `${where}: isAccessibleForFree`);
+    common(path, ld);
+    const FIG_TYPES = ["WebPage", "WebSite", "Person", f.placeType, "BreadcrumbList", "ListItem", "ImageObject"];
+    for (const t of new Set(types(ld))) assert(FIG_TYPES.includes(t), `${where}: allowed @type ${t}`);
+    assert(!/"(Article|NewsArticle|Offer|MonetaryAmount|Organization|Corporation|Event|Review|Rating)"/.test(text), `${where}: no Article, Offer, Organization or other stretched types`);
+    const person = ld.mainEntity as Record<string, unknown>;
+    assert(JSON.stringify(person) === JSON.stringify(ld.about), `${where}: about and mainEntity are the same Person`);
+    assert(Object.keys(person).sort().join(",") === "@id,@type,birthDate,birthPlace,name,sameAs", `${where}: Person keys exactly @id, @type, name, birthDate, birthPlace, sameAs`);
+    assert(person["@type"] === "Person" && person["@id"] === `${absUrl(path)}#person` && person.name === f.name, `${where}: Person @id and name`);
+    assert(person.birthDate === f.birthDate && ISO.test(String(person.birthDate)), `${where}: birthDate is a plain ISO date`);
+    assert(JSON.stringify(person.sameAs) === JSON.stringify([f.wikipediaUrl, `https://www.wikidata.org/wiki/${f.wikidataId}`]), `${where}: sameAs is exactly Wikipedia and Wikidata`);
+    assert(JSON.stringify(person.birthPlace) === JSON.stringify({ "@type": f.placeType, name: f.placeName, sameAs: f.placeSameAs }), `${where}: birthPlace ${f.placeType} with name and sameAs`);
+    assert(!/birthTime|"geo"|latitude|longitude|"image"|jobTitle|award|deathDate|gender|spouse|children|parent/i.test(JSON.stringify(person)), `${where}: no birth time, geo, image, job, awards or family in the Person`);
+    assert(!text.includes(f.birthTimeText) && !text.includes(f.latLongText), `${where}: birth time and coordinates stay out of JSON-LD (D-3)`);
+    const allowed = PERSON_ALLOWLIST[path];
+    const persons = personNodes(ld);
+    assert(persons.length >= 1 && persons.every((p) => allowed.some((a) => a.id === p["@id"])), `${where}: every Person node is on PERSON_ALLOWLIST`);
+    const based = ld.isBasedOn as Record<string, unknown>;
+    assert(JSON.stringify(based) === JSON.stringify({ "@type": "WebPage", name: `Astro-Databank: ${f.name}`, url: f.adbUrl }) && String(based.url).startsWith(ADB), `${where}: isBasedOn the Astro-Databank WebPage`);
+    assert(ld.citation === f.hook.url, `${where}: citation is the hook URL`);
+    const crumbs = (ld.breadcrumb as Record<string, unknown>).itemListElement as Record<string, unknown>[];
+    assert(crumbs.length === 3 && crumbs[0].item === `${SITE_ORIGIN}/` && crumbs[1].name === "Charts" && crumbs[1].item === CH_URL && crumbs[2].name === f.name && crumbs[2].item === absUrl(path) && crumbs.every((c, i) => c.position === i + 1 && c["@type"] === "ListItem"), `${where}: three-step breadcrumb`);
+    const siblings = CHART_FIGURES.filter((y) => y.slug !== f.slug).map((y) => absUrl(figurePath(y.slug)));
+    assert(JSON.stringify(ld.relatedLink) === JSON.stringify(siblings), `${where}: relatedLink is exactly the sibling figure pages`);
+    const img = ld.primaryImageOfPage as Record<string, unknown>;
+    const hit = artForPath(path);
+    assert(hit && NON_PORTRAIT_ART_IDS.has(hit.work.id) && img["@type"] === "ImageObject" && img.contentUrl === absUrl(contentPath(hit.work)), `${where}: primaryImageOfPage is a non-portrait still`);
+    assert(JSON.stringify(img.about) === JSON.stringify(absUrl(path)) && hit.assignment.siblings.includes("/natal"), `${where}: art about this page, /natal as art sibling (D-8)`);
+    assert(!BANNED.test(JSON.stringify({ ...ld, primaryImageOfPage: undefined })), `${where}: no banned wording in JSON-LD`);
+    assert(JSON.stringify(routeHead(path + "/")) === JSON.stringify(h), `${where}/: trailing slash is the same page`);
+    const up = routeHead(path.toUpperCase());
+    assert(up.jsonLd === null && up.canonical === CH_URL, `${where} upper case: miss, canonical /charts`);
+    assert(figureFromPath(path)?.slug === f.slug, `${where}: figureFromPath exact match`);
+    // sitemap and llms.txt
+    assert(sitemap.includes(`<loc>${absUrl(path)}</loc>`) && sitemap.includes(`<loc>${absUrl(`/press/${f.pressSlug}`)}</loc>`), `sitemap: ${path} and its release`);
+    const line = (llms.match(new RegExp(`^- ${path} — .+`, "m")) || [""])[0];
+    assert(line.includes(f.name) && /study page/.test(line) && /Astro-Databank/.test(line) && line.includes(`Rodden rating ${f.roddenRating}`), `llms.txt: ${path} line with study page, Astro-Databank and rating`);
+    assert(!BANNED.test(line), `llms.txt: ${path} clean wording`);
+  }
+  // sensitive reads the page states in one line (D-5 and §4 flags)
+  const idol = charts["billy-idol"].bodies.find((b) => b.key === "sun")!;
+  assert(charts["billy-idol"].sect === "night" && idol.house === 6, "billy-idol: engine sect night, Sun just below the western horizon");
+  assert(/sect/.test(CHART_FIGURES.find((f) => f.slug === "billy-idol")!.dataNote ?? ""), "billy-idol: page carries the one-line sect note (D-5)");
+  const jup = charts["charles-iii"].bodies.find((b) => b.key === "jupiter")!;
+  assert(jup.sign === "sagittarius" && jup.lon > 269.75, "charles-iii: Jupiter in the last minutes of Sagittarius, as the data note says");
+  assert(/07:28/.test(CHART_FIGURES.find((f) => f.slug === "liza-minnelli")!.dataNote ?? ""), "liza-minnelli: variant time noted without choosing it");
+
+  // figure page source: backlinks, breadcrumb, miss
+  for (const needle of ['to="/natal"', 'to="/library"', 'to="/library/christian-astrology"', 'to="/dignities"', "planetPath(r.key)", "to={CHARTS_PATH}", "to={`/press/${figure.pressSlug}`}", 'aria-label="Breadcrumb"', 'aria-label="Other charts"', "CHART_FIGURES.filter((f) => f.slug !== figure.slug)"])
+    assert(pageSrc.includes(needle), `figure page: ${needle}`);
+  assert(/This chart page was not found/.test(pageSrc) && /figureFromPath/.test(pageSrc) && !/PRESS\[0\]|SiteHome/.test(pageSrc), "chart miss: own miss state, not the press fallback or home");
+  assert(/figureChart\(figure\)/.test(pageSrc) && !/\d+°\d+′/.test(pageSrc), "figure page: positions come from the engine, none typed in");
+  const lit = stripDisclaimer([...pageSrc.replace(/className="[^"]*"/g, "").matchAll(/>([^<>{}]+)</g)].map((m) => m[1]).join(" "));
+  assert(!BANNED.test(lit), `charts page literals: no banned wording (${lit.match(BANNED)?.[0]})`);
+  const chartsSrc = readFileSync(new URL("../src/site/charts.ts", import.meta.url), "utf8");
+  assert(!/\d+°\d+′/.test(chartsSrc) && !/"(Offer|MonetaryAmount)"/.test(chartsSrc), "charts.ts: no hand-entered positions, no Offer");
+
+  // chart press releases (§9)
+  assert(PRESS[0].slug === "launch", "PRESS[0] is still launch");
+  const cp = routeHead(`/press/${CHARTS_PRESS_SLUG}`).jsonLd!;
+  assert(cp["@type"] === "Article" && cp.about === CH_URL && cp.isAccessibleForFree === true, "/press/charts: Article about /charts, free");
+  assert(Array.isArray(cp.isBasedOn) && (cp.isBasedOn as Record<string, unknown>[]).length === 4 && (cp.isBasedOn as Record<string, unknown>[]).every((b) => String(b.url).startsWith(ADB)), "/press/charts: isBasedOn the four Astro-Databank records");
+  assert(personNodes(cp).length === 0, "/press/charts: no Person");
+  const pressSlugs = [CHARTS_PRESS_SLUG, ...CHART_FIGURES.map((f) => f.pressSlug)];
+  for (const slug of pressSlugs) {
+    const item = PRESS.find((p) => p.slug === slug)!;
+    const path = `/press/${slug}`;
+    const ld = routeHead(path).jsonLd!;
+    assert(ld["@type"] === "Article" && !JSON.stringify(ld).includes("NewsArticle"), `${path}: Article, not NewsArticle (D-9)`);
+    assert(Object.keys(ld).sort().join(",") === "@context,@type,about,datePublished,description,headline,inLanguage,isAccessibleForFree,isBasedOn,isPartOf,name,url", `${path}: Article plus about, isBasedOn, isAccessibleForFree only`);
+    const links = (item.links ?? []).map((l) => l.to);
+    const f = CHART_FIGURES.find((x) => x.pressSlug === slug);
+    assert(links.includes(f ? figurePath(f.slug) : CHARTS_PATH) && links.includes("/natal"), `${path}: visible links to its /charts page and /natal`);
+    for (const l of links) assert(l === "/natal" || l === "/dignities" || l === CHARTS_PATH || figureFromPath(l) !== undefined || /^\/dignities\/(saturn|jupiter|mars|sun|venus|mercury|moon)$/.test(l), `${path}: link ${l} is a live hub page`);
+    const copy = [item.title, item.excerpt, ...item.body, ...(item.links ?? []).map((l) => l.label)].join(" ");
+    assert(!BANNED.test(copy), `${path}: no banned wording in title, excerpt or body (${copy.match(BANNED)?.[0]})`);
+    assert(!BANNED.test(JSON.stringify(ld)), `${path}: no banned wording in JSON-LD`);
+    assert(sitemap.includes(`<loc>${absUrl(path)}</loc>`), `sitemap: ${path}`);
+    if (f) {
+      const about = ld.about as unknown[];
+      const figLd = routeHead(figurePath(f.slug)).jsonLd!;
+      assert(Array.isArray(about) && about.length === 2 && JSON.stringify(about[0]) === JSON.stringify(figLd.mainEntity) && about[1] === absUrl(figurePath(f.slug)), `${path}: about is the figure's Person (same @id) and its page`);
+      assert(personNodes(ld).every((p) => PERSON_ALLOWLIST[path].some((a) => a.id === p["@id"] && a.id === personId(f))), `${path}: Person on PERSON_ALLOWLIST`);
+      assert(String((ld.isBasedOn as Record<string, unknown>).url) === f.adbUrl, `${path}: isBasedOn the Astro-Databank record`);
+      assert(copy.includes(`rated ${f.roddenRating}`), `${path}: states the Rodden rating`);
+    }
+  }
+  // release claims agree with the engine (§9: "if Dev's engine disagrees, the summary changes")
+  const dig = (slug: string, key: string) => charts[slug].dignities.find((d) => d.planet === key)!;
+  assert(charts["charles-iii"].sect === "night" && dig("charles-iii", "venus").ruler && dig("charles-iii", "jupiter").ruler && dig("charles-iii", "moon").exalt, "chart-charles-iii: night, Venus and Jupiter in own house, Moon exalted");
+  assert(charts["liza-minnelli"].sect === "day" && dig("liza-minnelli", "moon").ruler, "chart-liza-minnelli: day, Moon in own house");
+  assert(dig("billy-idol", "mars").ruler && charts["billy-idol"].bodies.find((b) => b.key === "mars")!.sign === "scorpio", "chart-billy-idol: Mars in own house of Scorpio");
+  const lsun = charts["queen-latifah"].bodies.find((b) => b.key === "sun")!;
+  assert(charts["queen-latifah"].sect === "day" && lsun.sign === "pisces" && lsun.deg >= 20, "chart-queen-latifah: day, Sun late in Pisces");
+
+  // Person allowance stays narrow: only the allowlisted paths carry full Person nodes
+  for (const path of [...Object.keys(EXPECT), ...PRESS.map((p) => `/press/${p.slug}`), ...PLANET_CATALOGS.map((c) => planetPath(c.key)), ...LIBRARY_BOOKS.map((b) => bookPath(b.id)), ...CHART_FIGURES.map((f) => figurePath(f.slug))]) {
+    const ld = routeHead(path).jsonLd;
+    const nodes = ld ? personNodes(ld) : [];
+    if (!PERSON_ALLOWLIST[path]) assert(nodes.length === 0, `${path}: no full Person node outside PERSON_ALLOWLIST`);
+  }
+  assert(Object.keys(PERSON_ALLOWLIST).length === 8, "PERSON_ALLOWLIST: four figure pages and four releases only");
+
+  // /articles (R-EDITORIAL-001 §3, §9)
+  const art = routeHead(ARTICLES_PATH).jsonLd!;
+  const alist = art.mainEntity as Record<string, unknown>;
+  const aels = alist.itemListElement as Record<string, unknown>[];
+  const want = [...CHART_FIGURES.map((f) => absUrl(figurePath(f.slug))), ...ARTICLES.map((a) => absUrl(articlePath(a)))];
+  assert(art["@type"] === "CollectionPage" && art.isAccessibleForFree === true && JSON.stringify(art.relatedLink) === JSON.stringify([CH_URL]), "/articles: CollectionPage, free, links /charts");
+  assert(alist.numberOfItems === want.length && aels.length === want.length && aels.every((el, i) => el.position === i + 1 && el.url === want[i]), "/articles: ItemList size equals the catalog (celebrity beat + articles)");
+  assert(!aels.some((el) => /\/articles\/celebrity/.test(String(el.url))), "/articles: no /articles/celebrity duplicate (D-1)");
+  assert(personNodes(art).length === 0, "/articles: no Person");
+  for (const a of ARTICLES) {
+    const path = articlePath(a);
+    const ld = routeHead(path).jsonLd!;
+    assert(ld["@type"] === "Article" && ld.headline === a.title && ISO.test(String(ld.datePublished)) && ld.isAccessibleForFree === true, `${path}: Article`);
+    common(path, ld);
+    assert(a.beat in ARTICLE_BEATS && PRESS.some((p) => p.slug === a.pressSlug), `${path}: beat and pressSlug`);
+    assert(!BANNED.test([a.title, a.summary, ...a.body].join(" ")) && !/\bcur(e|es|ed|ing)\b|\bdos(e|es|ing|age)\b|remed|harm/i.test(a.body.join(" ")), `${path}: no banned wording`);
+    assert(sitemap.includes(`<loc>${absUrl(path)}</loc>`), `sitemap: ${path}`);
+  }
+  const artSrc = readFileSync(new URL("../src/pages/site/ArticlesPage.tsx", import.meta.url), "utf8");
+  assert(/to=\{CHARTS_PATH\}/.test(artSrc) && /This article was not found/.test(artSrc) && /articleFromPath/.test(artSrc) && !/PRESS\[0\]|SiteHome/.test(artSrc), "/articles page: links /charts, own miss state");
+  const artLit = stripDisclaimer([...artSrc.replace(/className="[^"]*"/g, "").matchAll(/>([^<>{}]+)</g)].map((m) => m[1]).join(" "));
+  assert(!BANNED.test(artLit), "/articles page literals: no banned wording");
+
+  // unknown slugs: miss, no JSON-LD, canonical on the index
+  for (const path of ["/charts/x", "/charts/Charles-III", "/charts/CHARLES-III", "/charts/charles-iii/extra", "/charts/charles", "/charts/avril-lavigne", "/charts/king-charles-iii"]) {
+    const h = routeHead(path);
+    assert(h.jsonLd === null && h.canonical === CH_URL, `${path}: miss, no JSON-LD, canonical /charts`);
+  }
+  for (const path of ["/articles/x", "/articles/magic", "/articles/companies/ford", "/articles/celebrity/charles-iii", "/articles/Magic/x"]) {
+    const h = routeHead(path);
+    assert(h.jsonLd === null && h.canonical === absUrl(ARTICLES_PATH), `${path}: miss, no JSON-LD, canonical /articles`);
+  }
+
+  // nav, routes, public files, press room links
+  const layout = readFileSync(new URL("../src/components/SiteLayout.tsx", import.meta.url), "utf8");
+  assert(/\{ to: "\/dignities", label: "Dignities" \},\n\s*\{ to: "\/charts", label: "Charts" \},/.test(layout) && (layout.match(/label: "Charts"/g) || []).length === 1 && !/to: "\/charts\//.test(layout), "header nav: one Charts entry after Dignities, no per-figure items (D-2)");
+  assert(!/label: "Articles"/.test(layout), "header nav: no Articles entry until a non-celebrity article ships (R-EDITORIAL D-9)");
+  const appSrc = readFileSync(new URL("../src/App.tsx", import.meta.url), "utf8");
+  assert(/<Route path="\/charts" element=\{<ChartsPage \/>\} \/>/.test(appSrc) && /<Route path="\/charts\/:figure" element=\{<ChartsPage \/>\} \/>/.test(appSrc), "App.tsx: /charts routes");
+  assert(/<Route path="\/articles" element=\{<ArticlesPage \/>\} \/>/.test(appSrc) && /<Route path="\/articles\/:beat\/:slug" element=\{<ArticlesPage \/>\} \/>/.test(appSrc), "App.tsx: /articles routes");
+  assert(appSrc.lastIndexOf('path="*"') > appSrc.lastIndexOf("/articles/*"), "App.tsx: catch-all remains last");
+  assert(sitemap.includes(`<loc>${CH_URL}</loc>`) && sitemap.includes(`<loc>${absUrl(ARTICLES_PATH)}</loc>`), "sitemap: /charts and /articles");
+  const chLine = (llms.match(/^- \/charts — [\s\S]*?(?=\n- |\n## )/m) || [""])[0];
+  assert(/Astro-Databank/.test(chLine) && /Rodden rating/.test(chLine) && /study and entertainment/.test(chLine) && !BANNED.test(chLine), "llms.txt: /charts line");
+  const arLine = (llms.match(/^- \/articles — [\s\S]*?(?=\n- |\n## )/m) || [""])[0];
+  assert(/celebrity/.test(arLine) && /businesses/.test(arLine) && /magic/.test(arLine) && /occult/.test(arLine) && /study and entertainment/.test(arLine) && !BANNED.test(arLine), "llms.txt: /articles line names the four beats");
+  const pressIdx = readFileSync(new URL("../src/pages/site/PressIndex.tsx", import.meta.url), "utf8");
+  assert(/<Link to="\/charts"/.test(pressIdx) && /<Link to="\/articles"/.test(pressIdx), "/press: visible links to /charts and /articles");
+  const pressRel = readFileSync(new URL("../src/pages/site/PressRelease.tsx", import.meta.url), "utf8");
+  assert(/p\.links\.map/.test(pressRel), "press release renders its hub links");
 }
 
 console.log(`check:schema OK — ${n} assertions`);

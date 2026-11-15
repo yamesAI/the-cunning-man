@@ -18,6 +18,13 @@ import {
 import { PLANET_LABEL, SIGN_LABEL } from "../astro/constants";
 import { artForPath, contentPath, creditText } from "./art";
 import { learnMoreForName } from "./learnMore";
+import {
+  CHARTS_DESCRIPTION, CHARTS_PATH, CHARTS_PRESS_SLUG, CHARTS_TITLE, CHART_FIGURES,
+  figureFromPath, figurePageDescription, figurePageName, figurePath, type ChartFigure,
+} from "./charts";
+import {
+  ARTICLES, ARTICLES_DESCRIPTION, ARTICLES_PATH, ARTICLES_TITLE, articleFromPath, articlePath, type ArticleItem,
+} from "./articles";
 
 export const SITE_ORIGIN = "https://cunning-man.vercel.app";
 export const SITE_NAME = "The Cunning Man";
@@ -322,6 +329,129 @@ function dignitiesPage(): Json {
   };
 }
 
+// R-CHARTS-001 §7 (D-1, D-3, D-7): each figure page is a WebPage about one
+// Person. The Person carries @id, name, birthDate (plain date), birthPlace
+// (City or Place with sameAs) and sameAs [Wikipedia, Wikidata] only: no birth
+// time, coordinates, image, jobTitle or awards. No publisher, creator or Offer.
+const CHARTS_URL = absUrl(CHARTS_PATH);
+
+export function personId(f: ChartFigure): string {
+  return `${absUrl(figurePath(f.slug))}#person`;
+}
+
+function personNode(f: ChartFigure): Json {
+  return {
+    "@type": "Person",
+    "@id": personId(f),
+    name: f.name,
+    birthDate: f.birthDate,
+    birthPlace: { "@type": f.placeType, name: f.placeName, sameAs: f.placeSameAs },
+    sameAs: [f.wikipediaUrl, `https://www.wikidata.org/wiki/${f.wikidataId}`],
+  };
+}
+
+function adbNode(f: ChartFigure): Json {
+  return { "@type": "WebPage", name: `Astro-Databank: ${f.name}`, url: f.adbUrl };
+}
+
+function figurePageGraph(f: ChartFigure): Json {
+  const path = figurePath(f.slug);
+  const person = personNode(f);
+  return {
+    ...base("WebPage", path, figurePageName(f), figurePageDescription(f)),
+    isAccessibleForFree: true,
+    about: person,
+    mainEntity: person,
+    isBasedOn: adbNode(f),
+    citation: f.hook.url,
+    breadcrumb: {
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: SITE_NAME, item: `${SITE_ORIGIN}/` },
+        { "@type": "ListItem", position: 2, name: "Charts", item: CHARTS_URL },
+        { "@type": "ListItem", position: 3, name: f.name, item: absUrl(path) },
+      ],
+    },
+    relatedLink: CHART_FIGURES.filter((x) => x.slug !== f.slug).map((x) => absUrl(figurePath(x.slug))),
+  };
+}
+
+function chartsPage(): Json {
+  return {
+    ...base("CollectionPage", CHARTS_PATH, CHARTS_TITLE, CHARTS_DESCRIPTION),
+    isAccessibleForFree: true,
+    mainEntity: {
+      "@type": "ItemList",
+      numberOfItems: CHART_FIGURES.length,
+      itemListElement: CHART_FIGURES.map((f, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        name: f.name,
+        url: absUrl(figurePath(f.slug)),
+      })),
+    },
+    relatedLink: [absUrl("/natal"), absUrl(DIGNITIES_PATH)],
+  };
+}
+
+/** R-CHARTS-001 §9: extra Article properties for a chart press release. */
+function chartPressExtras(slug: string): Json | null {
+  if (slug === CHARTS_PRESS_SLUG) {
+    return { about: CHARTS_URL, isBasedOn: CHART_FIGURES.map(adbNode), isAccessibleForFree: true };
+  }
+  const f = CHART_FIGURES.find((x) => x.pressSlug === slug);
+  if (!f) return null;
+  return { about: [personNode(f), absUrl(figurePath(f.slug))], isBasedOn: adbNode(f), isAccessibleForFree: true };
+}
+
+// R-EDITORIAL-001 §3, §5 (D-1, D-2): /articles is a CollectionPage whose list
+// starts with the celebrity beat (the /charts figure pages) and then the other
+// beats' Article pages. Article pages are Article, not NewsArticle.
+const ARTICLES_URL = absUrl(ARTICLES_PATH);
+
+function articlesPage(): Json {
+  const items = [
+    ...CHART_FIGURES.map((f) => ({ name: f.name, url: absUrl(figurePath(f.slug)) })),
+    ...ARTICLES.map((a) => ({ name: a.title, url: absUrl(articlePath(a)) })),
+  ];
+  return {
+    ...base("CollectionPage", ARTICLES_PATH, ARTICLES_TITLE, ARTICLES_DESCRIPTION),
+    isAccessibleForFree: true,
+    mainEntity: {
+      "@type": "ItemList",
+      numberOfItems: items.length,
+      itemListElement: items.map((x, i) => ({ "@type": "ListItem", position: i + 1, ...x })),
+    },
+    relatedLink: [CHARTS_URL],
+  };
+}
+
+function articleGraph(a: ArticleItem): Json {
+  const path = articlePath(a);
+  return {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: a.title,
+    name: a.title,
+    description: a.summary,
+    datePublished: a.datePublished,
+    url: absUrl(path),
+    isPartOf: IS_PART_OF,
+    inLanguage: "en",
+    isAccessibleForFree: true,
+    isBasedOn: a.sources.map((s) => ({ "@type": "WebPage", name: s.name, url: s.url })),
+    breadcrumb: {
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: SITE_NAME, item: `${SITE_ORIGIN}/` },
+        { "@type": "ListItem", position: 2, name: "Articles", item: ARTICLES_URL },
+        { "@type": "ListItem", position: 3, name: a.title, item: absUrl(path) },
+      ],
+    },
+    relatedLink: ARTICLES.filter((x) => x.beat === a.beat && x.slug !== a.slug).map((x) => absUrl(articlePath(x))),
+  };
+}
+
 /** Exact known static paths -> JSON-LD. Lower-case, no trailing slash. */
 const STATIC: Record<string, () => Json> = {
   "/": () => ({
@@ -414,6 +544,8 @@ const STATIC: Record<string, () => Json> = {
   }),
   [LIBRARY_PATH]: libraryPage,
   [DIGNITIES_PATH]: dignitiesPage,
+  [CHARTS_PATH]: chartsPage,
+  [ARTICLES_PATH]: articlesPage,
 };
 
 /** Normalise a location pathname for lookup: strip trailing slashes. */
@@ -457,8 +589,25 @@ function routeHeadRaw(pathname: string): RouteHead {
         url: canonical,
         isPartOf: IS_PART_OF,
         inLanguage: "en",
+        ...chartPressExtras(item.slug),
       },
     };
+  }
+
+  // R-CHARTS-001 §2: exact lowercase /charts/<slug> only. Any other child path
+  // is a miss: no JSON-LD, canonical stays on the index.
+  if (/^\/charts\//i.test(p)) {
+    const f = figureFromPath(p);
+    if (!f) return { canonical: CHARTS_URL, jsonLd: null };
+    return { canonical: absUrl(figurePath(f.slug)), jsonLd: figurePageGraph(f) };
+  }
+
+  // R-EDITORIAL-001 §3: exact lowercase /articles/<beat>/<slug> only; any other
+  // child path is a miss with no JSON-LD and canonical /articles.
+  if (/^\/articles\//i.test(p)) {
+    const a = articleFromPath(p);
+    if (!a) return { canonical: ARTICLES_URL, jsonLd: null };
+    return { canonical: absUrl(articlePath(a)), jsonLd: articleGraph(a) };
   }
 
   // DIGNITIES-002: exact lowercase /dignities/<key> only. Any other child

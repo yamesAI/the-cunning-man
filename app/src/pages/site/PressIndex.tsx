@@ -12,9 +12,13 @@ export default function PressIndex() {
   return (
     <div>
       <h1 className="text-3xl font-bold mb-1 font-smallcaps">✒ Press Room</h1>
-      <p className="text-[14px] text-ink-soft max-w-3xl mb-6">
+      <p className="text-[14px] text-ink-soft max-w-3xl mb-2">
         Releases fit for print. Journalists and advertisers: everything here may be quoted freely
         with a link back.
+      </p>
+      <p className="text-[13px] mb-6">
+        See also <Link to="/charts" className="underline">Charts</Link> and{" "}
+        <Link to="/articles" className="underline">Articles</Link>.
       </p>
       <div className="space-y-4">
         {PRESS.map((p) => (

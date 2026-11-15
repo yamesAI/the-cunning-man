@@ -24,9 +24,20 @@
   <url><loc>https://cunning-man.vercel.app/dignities/venus</loc><priority>0.5</priority></url>
   <url><loc>https://cunning-man.vercel.app/dignities/mercury</loc><priority>0.5</priority></url>
   <url><loc>https://cunning-man.vercel.app/dignities/moon</loc><priority>0.5</priority></url>
+  <url><loc>https://cunning-man.vercel.app/charts</loc><priority>0.6</priority></url>
+  <url><loc>https://cunning-man.vercel.app/charts/charles-iii</loc><priority>0.5</priority></url>
+  <url><loc>https://cunning-man.vercel.app/charts/liza-minnelli</loc><priority>0.5</priority></url>
+  <url><loc>https://cunning-man.vercel.app/charts/billy-idol</loc><priority>0.5</priority></url>
+  <url><loc>https://cunning-man.vercel.app/charts/queen-latifah</loc><priority>0.5</priority></url>
+  <url><loc>https://cunning-man.vercel.app/articles</loc><priority>0.5</priority></url>
   <url><loc>https://cunning-man.vercel.app/press/launch</loc><priority>0.5</priority></url>
   <url><loc>https://cunning-man.vercel.app/press/trading-clock</loc><priority>0.5</priority></url>
   <url><loc>https://cunning-man.vercel.app/press/synastry-meter</loc><priority>0.5</priority></url>
   <url><loc>https://cunning-man.vercel.app/press/sigil-engine</loc><priority>0.5</priority></url>
   <url><loc>https://cunning-man.vercel.app/press/rune-cast</loc><priority>0.5</priority></url>
+  <url><loc>https://cunning-man.vercel.app/press/charts</loc><priority>0.5</priority></url>
+  <url><loc>https://cunning-man.vercel.app/press/chart-charles-iii</loc><priority>0.5</priority></url>
+  <url><loc>https://cunning-man.vercel.app/press/chart-liza-minnelli</loc><priority>0.5</priority></url>
+  <url><loc>https://cunning-man.vercel.app/press/chart-billy-idol</loc><priority>0.5</priority></url>
+  <url><loc>https://cunning-man.vercel.app/press/chart-queen-latifah</loc><priority>0.5</priority></url>
 </urlset>

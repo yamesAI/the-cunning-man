@@ -15,6 +15,8 @@ import PressRelease from './pages/site/PressRelease'
 import SessionSkyPage from './pages/site/SessionSkyPage'
 import LibraryPage from './pages/site/LibraryPage'
 import DignitiesPage from './pages/site/DignitiesPage'
+import ChartsPage from './pages/site/ChartsPage'
+import ArticlesPage from './pages/site/ArticlesPage'
 import { RouteHead } from './components/RouteHead'
 
 export default function App() {
@@ -41,6 +43,12 @@ export default function App() {
           <Route path="/dignities" element={<DignitiesPage />} />
           <Route path="/dignities/:planet" element={<DignitiesPage />} />
           <Route path="/dignities/*" element={<DignitiesPage />} />
+          <Route path="/charts" element={<ChartsPage />} />
+          <Route path="/charts/:figure" element={<ChartsPage />} />
+          <Route path="/charts/*" element={<ChartsPage />} />
+          <Route path="/articles" element={<ArticlesPage />} />
+          <Route path="/articles/:beat/:slug" element={<ArticlesPage />} />
+          <Route path="/articles/*" element={<ArticlesPage />} />
           <Route path="*" element={inIframe ? <Home /> : <SiteHome />} />
         </Routes>
       </SiteLayout>
