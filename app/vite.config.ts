@@ -4,9 +4,11 @@ import { defineConfig } from "vite"
 import { inspectAttr } from 'kimi-plugin-inspect-react'
 
 // https://vite.dev/config/
-export default defineConfig({
+// QC-SITE-001 m-9: the inspect plugin adds code-path attributes (source file
+// and line) to the DOM, so it runs in the dev server only, never in builds.
+export default defineConfig(({ command }) => ({
   base: '/',
-  plugins: [inspectAttr(), react()],
+  plugins: command === 'serve' ? [inspectAttr(), react()] : [react()],
   server: {
     port: 3000,
   },
@@ -20,4 +22,4 @@ export default defineConfig({
       ),
     },
   },
-});
+}));

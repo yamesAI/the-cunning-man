@@ -3,8 +3,8 @@
 // works the hub already cites in data/tradition.ts, as metadata-only entries
 // with the same verification URLs. Child routes /library/<id> reopen LIB-001 D-5
 // (HUB-PAGES-001 D-1). No full text is hosted here. Not press
-// items (D-4); "AI vs the Sky" stays the footer download, not a catalog item
-// (D-2). Lives in src/site/, never src/lib/ (D-1).
+// items (D-4) and no downloads (D-2; the footer PDF was removed in
+// HUB-FIX-001). Lives in src/site/, never src/lib/ (D-1).
 
 export const LIBRARY_PATH = "/library";
 export const LIBRARY_TITLE = "The Cunning Man — Library";

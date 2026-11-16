@@ -19,6 +19,7 @@ export const MAX_WINDOW_HOURS = 48;
 export const MAX_WINDOW_MS = MAX_WINDOW_HOURS * 3600000;
 export const SAMPLE_STEP_MS = 15 * 60000;
 export const BISECT_TO_MS = 60000;
+const COARSE = 4; // look-ahead in sample steps (4 x 15 min = 1 hour)
 
 // Seven classical planets in the usual display order.
 export const SKY_PLANETS: PlanetKey[] = ["sun", "moon", "mercury", "venus", "mars", "jupiter", "saturn"];
@@ -233,6 +234,20 @@ const mansionIdx = (lon: number) => moonMansion(lon).index;
  * Times are the first sampled instant found in the new sign or mansion.
  */
 export function findChanges(start: Date, end: Date, lat: number, lng: number, stepMs = SAMPLE_STEP_MS): SkyChange[] {
+  const it = scanChanges(start, end, lat, lng, stepMs);
+  for (;;) {
+    const r = it.next();
+    if (r.done) return r.value;
+  }
+}
+
+/**
+ * The same scan as findChanges, one sample step at a time: yields the fraction
+ * of the window done (0..1) after each step and returns the changes. The
+ * Session Sky page runs it in short slices so the page stays responsive and
+ * shows progress (HUB-FIX-001, SIM-WALK-001 "Working through the window…").
+ */
+export function* scanChanges(start: Date, end: Date, lat: number, lng: number, stepMs = SAMPLE_STEP_MS): Generator<number, SkyChange[], void> {
   const s = start.getTime();
   const e = Math.min(end.getTime(), s + MAX_WINDOW_MS); // never scan past 48h
   const cache = new Map<number, Sample>();
@@ -249,9 +264,7 @@ export function findChanges(start: Date, end: Date, lat: number, lng: number, st
     { planet: "moon", kind: "mansion", idx: mansionIdx },
   ];
   const out: SkyChange[] = [];
-  let prevT = s;
-  while (prevT < e) {
-    const t = Math.min(prevT + stepMs, e);
+  const fineStep = (prevT: number, t: number) => {
     const a0 = at(prevT), b0 = at(t);
     for (const k of keys) {
       const from = k.idx(a0[k.planet]!);
@@ -268,7 +281,25 @@ export function findChanges(start: Date, end: Date, lat: number, lng: number, st
         out.push({ kind: "mansion", planet: "moon", from, to, time: new Date(b) });
       }
     }
-    prevT = t;
+  };
+  // Look COARSE steps ahead first: a stretch with no sign or mansion change at
+  // either end is skipped (no planet can leave and re-enter a 12°51′ mansion or
+  // a sign within an hour); a stretch with one is walked on the same stepMs grid
+  // as before, so the results are unchanged and the scan is about 4x faster.
+  let prevT = s;
+  while (prevT < e) {
+    const coarseT = Math.min(prevT + COARSE * stepMs, e);
+    const ca = at(prevT), cb = at(coarseT);
+    if (keys.every((k) => k.idx(ca[k.planet]!) === k.idx(cb[k.planet]!))) {
+      prevT = coarseT;
+    } else {
+      while (prevT < coarseT) {
+        const t = Math.min(prevT + stepMs, coarseT);
+        fineStep(prevT, t);
+        prevT = t;
+      }
+    }
+    if (prevT < e) yield (prevT - s) / (e - s);
   }
   out.sort((x, y) => x.time.getTime() - y.time.getTime());
   return out;

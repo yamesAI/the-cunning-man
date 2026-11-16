@@ -20,10 +20,13 @@ import { LEARN_MORE, learnMoreForCatalog, learnMoreForName, occupationHaystack }
 import { NON_PORTRAIT_ART_IDS } from "../src/site/art";
 import {
   ALLOWED_RATINGS, CHARTS_DESCRIPTION, CHARTS_PATH, CHARTS_PRESS_SLUG, CHART_FIGURES,
-  figureChart, figureFromPath, figurePageDescription, figurePageName, figurePath, figureReads, parseAdbCoord,
+  figureAspects, figureChart, figureFromPath, figurePageDescription, figurePageName, figurePath, figureReads, parseAdbCoord,
+  SCORE_NOTE, SITE_INTRO,
 } from "../src/site/charts";
 import { ARTICLES, ARTICLES_PATH, ARTICLE_BEATS, articlePath } from "../src/site/articles";
-import { personId } from "../src/site/structuredData";
+import { personId, ogImage, DEFAULT_OG_IMAGE } from "../src/site/structuredData";
+import { STATIC_META, NOT_FOUND_META, pageMeta } from "../src/site/pageMeta";
+import { OPERATOR_NAME } from "../src/site/info";
 import { wallParts } from "../src/astro/format";
 
 let n = 0;
@@ -46,6 +49,11 @@ const ALLOWED_KEYS: Record<string, Set<string>> = { "/sky": new Set(["featureLis
 // Chart subjects are allowed only through PERSON_ALLOWLIST. Everywhere else
 // Person stays forbidden.
 const ALLOWED_TYPES: Record<string, Set<string>> = { "/library": new Set(["Person"]), "/dignities": new Set(["Person"]) };
+// HUB-FIX-001 (owner 2026-11-15 16:30/16:52): /about and /contact name the
+// operator as an Organization by brand only; only these pages may carry the
+// brand text. Nowhere else does Organization or the brand appear.
+const BRAND_PATHS = new Set(["/about", "/contact"]);
+for (const p of BRAND_PATHS) ALLOWED_TYPES[p] = new Set(["Organization"]);
 for (const c of PLANET_CATALOGS) ALLOWED_TYPES[planetPath(c.key)] = new Set(["Person"]);
 for (const b of LIBRARY_BOOKS) ALLOWED_TYPES[bookPath(b.id)] = new Set(["Person"]);
 
@@ -108,7 +116,10 @@ function common(path: string, ld: Record<string, unknown>) {
   const part = ld.isPartOf as Record<string, unknown>;
   assert(part && part["@type"] === "WebSite" && part.name === "The Cunning Man" && part.url === `${SITE_ORIGIN}/`, `${path}: isPartOf WebSite`);
   const text = JSON.stringify(path === "/library" ? withoutTermDefinitions(ld) : ld);
-  for (const re of FORBIDDEN_TEXT) assert(!re.test(text), `${path}: forbidden text ${re}`);
+  for (const re of FORBIDDEN_TEXT) {
+    if (BRAND_PATHS.has(path) && /AstroTrading/.test(re.source)) continue;
+    assert(!re.test(text), `${path}: forbidden text ${re}`);
+  }
   walk(ld, path, ALLOWED_KEYS[path], ALLOWED_TYPES[path]);
 }
 
@@ -118,6 +129,7 @@ const EXPECT: Record<string, string> = {
   "/launches": "WebApplication", "/sky": "WebApplication", "/sigil": "WebApplication", "/runes": "WebApplication",
   "/spells/love": "WebPage", "/spells/money": "WebPage", "/press": "CollectionPage", "/library": "CollectionPage",
   "/dignities": "WebPage", "/charts": "CollectionPage", "/articles": "CollectionPage",
+  "/about": "AboutPage", "/contact": "ContactPage", "/privacy": "WebPage",
 };
 const canonicals = new Set<string>();
 for (const [path, type] of Object.entries(EXPECT)) {
@@ -164,7 +176,7 @@ assert(!/prosper|wealth|riches/i.test(JSON.stringify(routeHead("/spells/money").
   assert(!/Offer|price|MonetaryAmount|offers/i.test(text), "/sky: no Offer/price/MonetaryAmount");
   assert(!/CreativeWork|temporalCoverage|isBasedOn/.test(text), "/sky: no result CreativeWork in v0");
   assert(!/\btrad(e|es|er|ers|ing)\b|\bentr(y|ies)\b|\bexit|signal|\bbuy\b|\bsell\b|\bedge\b|win rate|profit|market|ticker|funded|prop[- ]?firm|advice|disclaimer|forecast/i.test(text), "/sky: no trading/advice wording");
-  assert(Object.keys(ld).sort().join(",") === "@context,@type,applicationCategory,description,featureList,inLanguage,isAccessibleForFree,isPartOf,name,operatingSystem,primaryImageOfPage,url", "/sky: only the §5 properties plus primaryImageOfPage");
+  assert(Object.keys(ld).sort().join(",") === "@context,@type,applicationCategory,description,featureList,image,inLanguage,isAccessibleForFree,isPartOf,name,operatingSystem,url", "/sky: only the §5 properties plus image (m-2)");
 }
 
 // /press ItemList
@@ -652,8 +664,12 @@ for (const path of ["/dignity", "/lib", "/nope", "/clock/extra", "/press/nope", 
   const h = routeHead(path);
   assert(h.jsonLd === null, `${path}: unknown -> no JSON-LD`);
 }
-assert(routeHead("/press/nope").canonical === absUrl(`/press/${PRESS[0].slug}`), "/press/nope: canonical to fallback content");
-assert(routeHead("/nope").canonical === `${SITE_ORIGIN}/`, "/nope: canonical root");
+// QC-SITE-001 M-2: unknown paths and press slugs are not-found pages: no canonical.
+for (const path of ["/nope", "/this-does-not-exist", "/press/nope", "/press/LAUNCH", "/clock/extra", "/index.html", "/downloads/ai-vs-the-sky.pdf"]) {
+  const h = routeHead(path);
+  assert(h.canonical === null && h.jsonLd === null, `${path}: not found -> no canonical, no JSON-LD`);
+  assert(JSON.stringify(pageMeta(path)) === JSON.stringify(NOT_FOUND_META), `${path}: not-found title and description`);
+}
 
 // DIGNITIES-002 unknown planet slugs: miss, no JSON-LD, canonical /dignities
 for (const path of ["/dignities/x", "/dignities/pluto", "/dignities/uranus", "/dignities/neptune", "/dignities/SATURN", "/dignities/Saturn", "/dignities/saturn/extra", "/dignities/dragon"]) {
@@ -701,7 +717,7 @@ if (bundle && existsSync(bundle)) {
   const files = srcFiles(bundle).concat(readdirSync(join(bundle, "assets")).filter((f) => f.endsWith(".js")).map((f) => join(bundle, "assets", f)));
   for (const f of files) {
     const s = readFileSync(f, "utf8");
-    assert(!/MonetaryAmount|priceCurrency|"Offer"|@type":"Offer|CunningMan AstroTrading/.test(s), `${f}: bundle free of Offer/price/firm brand`);
+    assert(!/MonetaryAmount|priceCurrency|"Offer"|@type":"Offer/.test(s), `${f}: bundle free of Offer/price`);
   }
   console.log(`bundle scanned: ${files.length} files in ${bundle}`);
 }
@@ -736,15 +752,19 @@ if (bundle && existsSync(bundle)) {
     if (!shipped) {
       assert(hit === null, `${a.path}: unshipped still is not attached`);
       const ld = routeHead(a.path).jsonLd;
-      if (ld) assert(!ld.primaryImageOfPage, `${a.path}: no ImageObject when the still was not shipped`);
+      if (ld) assert(!ld.primaryImageOfPage && !ld.image, `${a.path}: no ImageObject when the still was not shipped`);
       continue;
     }
     assert(hit && hit.work.id === work.id, `${a.path}: art assignment`);
     const h = routeHead(a.path);
     assert(h.jsonLd, `${a.path}: has JSON-LD`);
     const ld = h.jsonLd!;
-    const img = ld.primaryImageOfPage as Record<string, unknown> | undefined;
-    assert(img && img["@type"] === "ImageObject", `${a.path}: primaryImageOfPage is ImageObject`);
+    // m-2: WebApplication carries the still as image; WebPage types as primaryImageOfPage.
+    const isApp = ld["@type"] === "WebApplication";
+    assert(isApp ? !("primaryImageOfPage" in ld) : !("image" in ld), `${a.path}: ${isApp ? "WebApplication has image, never primaryImageOfPage" : "WebPage type has primaryImageOfPage"}`);
+    const img = (isApp ? ld.image : ld.primaryImageOfPage) as Record<string, unknown> | undefined;
+    assert(img && img["@type"] === "ImageObject", `${a.path}: page still is an ImageObject`);
+    assert(ogImage(a.path) === img.contentUrl, `${a.path}: og:image is the page still (M-3)`);
     const content = String(img.contentUrl);
     assert(content === absUrl(contentPath(work)) && content.startsWith(`${SITE_ORIGIN}/art/`), `${a.path}: contentUrl is same-origin /art/`);
     assert(img.url === work.sourceRecord, `${a.path}: ImageObject.url is the source record`);
@@ -808,7 +828,7 @@ if (bundle && existsSync(bundle)) {
 
   const artSrc = readFileSync(new URL("../src/site/art.ts", import.meta.url), "utf8");
   const cellCredit = creditText(ART_WORKS["cellarius-harmonia"]);
-  assert(!/1708/.test(artSrc) && !/1708/.test(cellCredit) && !/1708/.test(String(routeHead("/synastry").jsonLd?.primaryImageOfPage && JSON.stringify(routeHead("/synastry").jsonLd))), "Cellarius credit and art.ts never say 1708");
+  assert(!/1708/.test(artSrc) && !/1708/.test(cellCredit) && !/1708/.test(JSON.stringify(routeHead("/synastry").jsonLd)), "Cellarius credit and art.ts never say 1708");
   assert(/1660–61 \(Amsterdam: Johannes Janssonius\)/.test(cellCredit), "Cellarius date is 1660–61 (Amsterdam: Johannes Janssonius)");
   assert(!/Children of the Planets/.test(artSrc) && !/Children of the Planets/.test(pageSrc) && !/Children of the Planets/.test(JSON.stringify(routeHead("/dignities/sun").jsonLd)), "no Children of the Planets wording");
 }
@@ -869,7 +889,8 @@ if (bundle && existsSync(bundle)) {
     assert(ruled === f.slug, `${where}: slug follows the Wikipedia title rule (${ruled})`);
     assert(/^Q\d+$/.test(f.wikidataId) && /^https:\/\/en\.wikipedia\.org\/wiki\//.test(f.placeSameAs), `${where}: Wikidata id and birthplace Wikipedia URL`);
     assert(f.placeType === (f.slug === "billy-idol" ? "Place" : "City"), `${where}: D-7 birthplace type`);
-    assert(ISO.test(f.hook.date) && f.hook.url.startsWith("https://") && f.hook.outlet.length > 0, `${where}: dated hook with outlet and URL`);
+    if (f.hook) assert(ISO.test(f.hook.date) && f.hook.url.startsWith("https://") && f.hook.outlet.length > 0, `${where}: dated hook with outlet and URL`);
+    else assert(f.slug === "charles-iii", `${where}: only Charles III has no hook (HUB-FIX-001 cut)`);
     assert(NON_PORTRAIT_ART_IDS.has(f.artId), `${where}: art id on the non-portrait allowlist`);
     assert(PRESS.some((p) => p.slug === f.pressSlug), `${where}: pressSlug ${f.pressSlug} exists in PRESS`);
     const [lat, lng] = f.latLongText.split(",").map(parseAdbCoord);
@@ -892,7 +913,7 @@ if (bundle && existsSync(bundle)) {
     });
     const reads = figureReads(chart);
     assert(reads.length === 7 && reads.map((r) => r.key).join(",") === PLANET_CATALOGS.map((c) => c.key).join(","), `${where}: seven traditional planets read, each with a /dignities page`);
-    const visible = stripDisclaimer([f.name, f.hook.sentence, f.dataNote ?? "", figurePageName(f), figurePageDescription(f), ...reads.map((r) => `${r.position} ${r.condition}`)].join(" "));
+    const visible = stripDisclaimer([f.name, f.hook?.sentence ?? "", f.dataNote ?? "", f.patternNote ?? "", figurePageName(f), figurePageDescription(f), ...reads.map((r) => `${r.position} ${r.condition}`)].join(" "));
     assert(!BANNED.test(visible), `${where}: no banned wording in visible copy (${visible.match(BANNED)?.[0]})`);
 
     // JSON-LD
@@ -902,7 +923,7 @@ if (bundle && existsSync(bundle)) {
     const text = JSON.stringify(ld);
     assert(ld["@type"] === "WebPage" && ld.name === figurePageName(f) && ld.description === figurePageDescription(f), `${where}: WebPage (D-1), name, description`);
     assert(h.canonical === absUrl(path) && ld.url === h.canonical, `${where}: canonical per slug`);
-    assert(Object.keys(ld).sort().join(",") === STATUS_KEYS, `${where}: only the §7 properties`);
+    assert(Object.keys(ld).sort().join(",") === (f.hook ? STATUS_KEYS : STATUS_KEYS.replace("citation,", "")), `${where}: only the §7 properties (no citation without a hook)`);
     assert(ld.isAccessibleForFree === true, `${where}: isAccessibleForFree`);
     common(path, ld);
     const FIG_TYPES = ["WebPage", "WebSite", "Person", f.placeType, "BreadcrumbList", "ListItem", "ImageObject"];
@@ -922,7 +943,7 @@ if (bundle && existsSync(bundle)) {
     assert(persons.length >= 1 && persons.every((p) => allowed.some((a) => a.id === p["@id"])), `${where}: every Person node is on PERSON_ALLOWLIST`);
     const based = ld.isBasedOn as Record<string, unknown>;
     assert(JSON.stringify(based) === JSON.stringify({ "@type": "WebPage", name: `Astro-Databank: ${f.name}`, url: f.adbUrl }) && String(based.url).startsWith(ADB), `${where}: isBasedOn the Astro-Databank WebPage`);
-    assert(ld.citation === f.hook.url, `${where}: citation is the hook URL`);
+    assert(ld.citation === f.hook?.url, `${where}: citation is the hook URL`);
     const crumbs = (ld.breadcrumb as Record<string, unknown>).itemListElement as Record<string, unknown>[];
     assert(crumbs.length === 3 && crumbs[0].item === `${SITE_ORIGIN}/` && crumbs[1].name === "Charts" && crumbs[1].item === CH_URL && crumbs[2].name === f.name && crumbs[2].item === absUrl(path) && crumbs.every((c, i) => c.position === i + 1 && c["@type"] === "ListItem"), `${where}: three-step breadcrumb`);
     const siblings = CHART_FIGURES.filter((y) => y.slug !== f.slug).map((y) => absUrl(figurePath(y.slug)));
@@ -1056,6 +1077,150 @@ if (bundle && existsSync(bundle)) {
   assert(/<Link to="\/charts"/.test(pressIdx) && /<Link to="\/articles"/.test(pressIdx), "/press: visible links to /charts and /articles");
   const pressRel = readFileSync(new URL("../src/pages/site/PressRelease.tsx", import.meta.url), "utf8");
   assert(/p\.links\.map/.test(pressRel), "press release renders its hub links");
+}
+
+// HUB-FIX-001: QC-SITE-001 majors/minors, SIM-WALK-001, SIM-CROWD-001,
+// About/Contact/Privacy, footer PDF removal.
+{
+  const src = (rel: string) => readFileSync(new URL(rel, import.meta.url), "utf8");
+  const appSrc = src("../src/App.tsx");
+  const layout = src("../src/components/SiteLayout.tsx");
+  const sitemap = src("../public/sitemap.xml");
+  const charts = src("../src/pages/site/ChartsPage.tsx");
+  const vercel = JSON.parse(src("../vercel.json")) as { rewrites?: { source: string; destination: string }[] };
+
+  // About, Contact, Privacy: routes, @type, footer links, sitemap, brand only
+  const INFO: Record<string, [string, string]> = {
+    "/about": ["AboutPage", "AboutPage"], "/contact": ["ContactPage", "ContactPage"], "/privacy": ["WebPage", "PrivacyPage"],
+  };
+  for (const [path, [type, comp]] of Object.entries(INFO)) {
+    assert(new RegExp(`<Route path="${path}" element=\\{<${comp} />\\} />`).test(appSrc), `App.tsx: ${path} route`);
+    const h = routeHead(path);
+    assert(h.jsonLd && h.jsonLd["@type"] === type && h.canonical === absUrl(path), `${path}: @type ${type}, canonical`);
+    assert(sitemap.includes(`<loc>${absUrl(path)}</loc>`), `sitemap: ${path}`);
+    assert(layout.includes(`{ to: "${path}", label: "`), `footer: ${path} link`);
+    assert(pageMeta(path) === STATIC_META[path as keyof typeof STATIC_META], `${path}: own title and description`);
+    assert(personNodes(h.jsonLd).length === 0 && !/"Person"/.test(JSON.stringify(h.jsonLd)), `${path}: no Person`);
+    assert(!/"(Offer|MonetaryAmount|FinancialService|FinancialProduct)"|price|signal/i.test(JSON.stringify(h.jsonLd)), `${path}: no prices or trading claims`);
+  }
+  for (const path of ["/about", "/contact"]) {
+    const org = routeHead(path).jsonLd!.about as Record<string, unknown>;
+    assert(org["@type"] === "Organization" && org.name === OPERATOR_NAME && Object.keys(org).sort().join(",") === "@type,name,url", `${path}: operator Organization, brand name and url only`);
+  }
+  assert(OPERATOR_NAME === "CunningMan AstroTrading", "operator brand is CunningMan AstroTrading");
+  assert(JSON.stringify(routeHead("/about").jsonLd!.mainEntity) === JSON.stringify(routeHead("/about").jsonLd!.about), "/about: mainEntity is the operator");
+  // no personal name anywhere on About (page source, info strings, JSON-LD)
+  const infoPages = src("../src/pages/site/InfoPages.tsx");
+  const aboutSrc = infoPages.slice(infoPages.indexOf("export function AboutPage"), infoPages.indexOf("export function ContactPage"));
+  const noComments = (t: string) => t.replace(/^\s*\/\/.*$/gm, "");
+  const aboutText = [noComments(aboutSrc), noComments(src("../src/site/info.ts")), JSON.stringify(routeHead("/about").jsonLd), JSON.stringify(pageMeta("/about"))].join(" ");
+  assert(!/david|yames|archia|keeper|founder|owner|\bMr\.?\s|\bMs\.?\s|"Person"/i.test(aboutText), "/about: brand only, no personal name");
+  assert(/OPERATOR_NAME/.test(aboutSrc), "/about: names the operator by brand");
+  // Contact: no invented address or handle
+  const contactSrc = infoPages.slice(infoPages.indexOf("export function ContactPage"), infoPages.indexOf("export function PrivacyPage"));
+  assert(!/@|mailto:|https?:\/\//.test(contactSrc) && /no public contact/.test(contactSrc), "/contact: says plainly there is no public contact channel; invents none");
+  assert(!/"(contactPoint|email|telephone)"/.test(JSON.stringify(routeHead("/contact").jsonLd)), "/contact: no contactPoint, email or telephone in JSON-LD");
+  // Privacy: every claim maps to code that exists
+  const privacySrc = infoPages.slice(infoPages.indexOf("export function PrivacyPage"));
+  assert(/cunning-man:location/.test(privacySrc) && /"cunning-man:location"/.test(src("../src/sky/SkyContext.tsx")), "/privacy: location storage key matches SkyContext");
+  assert(/cunning-man:natal/.test(privacySrc) && /"cunning-man:natal"/.test(src("../src/lib/natal.ts")), "/privacy: natal storage key matches lib/natal");
+  assert(/nominatim\.openstreetmap\.org/.test(privacySrc) && /nominatim\.openstreetmap\.org/.test(src("../src/components/CitySearch.tsx")), "/privacy: Nominatim disclosed and used");
+  assert(/fonts\.googleapis\.com/.test(privacySrc) && /fonts\.googleapis\.com/.test(src("../index.html")), "/privacy: Google Fonts disclosed and used");
+  assert(!/@vercel\/analytics|@vercel\/speed-insights|gtag|googletagmanager|plausible|posthog|segment/i.test(src("../package.json") + src("../index.html")), "/privacy: no analytics package or script");
+  // only src/components/ui/sidebar.tsx (unused) touches cookies
+  for (const f of srcFiles(new URL("../src", import.meta.url).pathname)) {
+    if (/components\/ui\/sidebar\.tsx$/.test(f)) continue;
+    assert(!/document\.cookie|sessionStorage|<iframe/.test(readFileSync(f, "utf8")), `${f}: no cookie, sessionStorage or iframe (privacy page)`);
+  }
+  assert(!/components\/ui\/sidebar/.test(srcFiles(new URL("../src", import.meta.url).pathname).filter((f) => !/components\/ui\//.test(f)).map((f) => readFileSync(f, "utf8")).join("\n")), "sidebar (the only cookie writer) is not imported by the app");
+  // brand text lives in info.ts only
+  for (const f of srcFiles(new URL("../src", import.meta.url).pathname)) {
+    if (/site\/info\.ts$/.test(f)) continue;
+    assert(!/AstroTrading/.test(readFileSync(f, "utf8")), `${f}: brand spelled only in src/site/info.ts`);
+  }
+
+  // footer PDF removed: no link, no file, no references
+  assert(!/ai-vs-the-sky|AI vs the Sky|\.pdf/i.test(layout), "footer: no AI vs the Sky link");
+  assert(!existsSync(new URL("../public/downloads/ai-vs-the-sky.pdf", import.meta.url)), "public/downloads/ai-vs-the-sky.pdf removed from the build");
+  assert(!/ai-vs-the-sky|\.pdf/i.test(sitemap + src("../public/llms.txt") + src("../public/robots.txt")), "sitemap, llms.txt, robots.txt: no PDF");
+  for (const f of srcFiles(new URL("../src", import.meta.url).pathname)) assert(!/ai-vs-the-sky|AI vs the Sky/i.test(readFileSync(f, "utf8")), `${f}: no AI vs the Sky reference`);
+
+  // SIM-CROWD-001: Charles birthday line cut; Latifah pattern line checked by the engine
+  const pressSrc = src("../src/site/press.ts");
+  assert(!/78th birthday/i.test(src("../src/site/charts.ts") + pressSrc + charts), "no '78th birthday' line on the Charles page or release");
+  const lat = CHART_FIGURES.find((f) => f.slug === "queen-latifah")!;
+  assert(/T-square/.test(lat.patternNote ?? "") && /name is modern/.test(lat.patternNote ?? ""), "queen-latifah: pattern line says the name is modern");
+  const latAsp = figureAspects(figureChart(lat));
+  const has = (p1: string, p2: string, k: string) => latAsp.some((a) => ((a.p1 === p1 && a.p2 === p2) || (a.p1 === p2 && a.p2 === p1)) && a.aspectKey === k);
+  assert(has("moon", "mars", "square") && has("moon", "saturn", "square") && has("moon", "jupiter", "square") && has("jupiter", "mars", "opposition") && has("jupiter", "saturn", "opposition"), "queen-latifah: engine shows Moon square Mars, Saturn, Jupiter and Jupiter opposite Mars and Saturn");
+  assert(CHART_FIGURES.filter((f) => f.patternNote).length === 1, "only the Latifah page carries a pattern line");
+  assert(/SCORE_NOTE/.test(charts) && /figureAspects\(chart\)/.test(charts), "figure pages explain the score and list engine aspects");
+  // Liza hook: only from approved copy (R-CHARTS-001, R-EDITORIAL-001, press copy); not found there, so not on the page
+  assert(!/Same sky\. Different chart\./.test(src("../src/site/charts.ts") + charts + pressSrc), "liza-minnelli: no hook copy invented");
+
+  // SIM-WALK-001: /charts has no /articles link; one-line site intro on /charts and figure pages
+  assert(!/to="\/articles"|to=\{ARTICLES_PATH\}|href="\/articles/.test(charts), "/charts: no link to the /articles placeholder");
+  assert((charts.match(/<SiteIntro \/>/g) || []).length === 2 && /The Cunning Man is a free site/.test(SITE_INTRO), "/charts and figure pages: one-line what-this-site-is intro");
+  assert(!/\btrad(e|ing)|advice|price|signal/i.test(SITE_INTRO + SCORE_NOTE), "intro and score note: clean wording");
+  // SIM-WALK-001: /sky change scan runs in slices and cannot stay stuck
+  const sky = src("../src/pages/site/SessionSkyPage.tsx");
+  assert(/scanChanges\(/.test(sky) && /catch \{/.test(sky) && /could not be worked out/.test(sky) && !/findChanges\(/.test(sky), "/sky: sliced scan with progress and a failure state");
+
+  // M-1: trading-clock release is study-only; slug and Article kept
+  const tc = PRESS.find((p) => p.slug === "trading-clock")!;
+  const tcText = [tc.title, tc.excerpt, ...tc.body].join(" ");
+  assert(!/day trader|trader|trading entry|entry window|not to trade|do-not-trade|session|sit on your hands/i.test(tcText), "M-1: trading-clock copy has no trader/entry/do-not-trade/session wording");
+  assert(/study/i.test(tc.title) && /study and entertainment/.test(tcText) && routeHead("/press/trading-clock").jsonLd!["@type"] === "Article", "M-1: study framing, Article kept");
+  const home = src("../src/pages/site/SiteHome.tsx");
+  assert(!/Day Traders|traders/i.test(home) && !/trading clock/i.test(JSON.stringify(STATIC_META)), "M-1: home teaser and /press description reworded");
+
+  // M-2: catch-all is the not-found page; press misses never render PRESS[0]; no blanket rewrite
+  assert(/<Route path="\*" element=\{inIframe \? <Home \/> : <NotFoundPage \/>\} \/>/.test(appSrc), "App.tsx: catch-all is NotFoundPage");
+  assert(!/PRESS\[0\]/.test(src("../src/pages/site/PressRelease.tsx")) && /NotFoundPage/.test(src("../src/pages/site/PressRelease.tsx")), "press miss: not-found page, not PRESS[0]");
+  assert(!(vercel.rewrites ?? []).some((r) => r.destination === "/index.html"), "vercel.json: no blanket rewrite to /index.html");
+  assert(/noindex/.test(src("../src/components/RouteHead.tsx")) && /noindex/.test(src("./prerender.ts")), "not-found: noindex at runtime and in 404.html");
+
+  // M-3/M-4: per-route head; index.html has no hard-coded canonical; og:image default
+  const indexHtml = src("../index.html");
+  assert(!/rel="canonical"/.test(indexHtml) && !/og:url/.test(indexHtml), "index.html: no hard-coded canonical or og:url");
+  assert(indexHtml.includes(`<meta property="og:image" content="${DEFAULT_OG_IMAGE}" />`) && /twitter:card" content="summary_large_image"/.test(indexHtml), "index.html: default og:image and summary_large_image");
+  for (const m of sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)) {
+    const path = m[1].slice(SITE_ORIGIN.length) || "/";
+    const h = routeHead(path);
+    assert(h.jsonLd && h.canonical === m[1], `${path}: sitemap route has JSON-LD and canonical (pre-render)`);
+    assert(pageMeta(path) !== NOT_FOUND_META && pageMeta(path).title.length > 0, `${path}: has its own title`);
+    assert(/^https:\/\/cunning-man\.vercel\.app\/art\/[a-z-]+\.webp$/.test(ogImage(path)), `${path}: absolute og:image`);
+  }
+  assert(/vite-node scripts\/prerender\.ts/.test(src("../package.json")), "build runs the pre-render");
+  // m-1: /clock has its own title and description
+  assert(pageMeta("/clock").title !== pageMeta("/").title && pageMeta("/clock").description !== pageMeta("/").description, "/clock: own title and description");
+  // m-5 skip link; m-7 credit; m-8 favicon; m-9 inspect plugin dev-only
+  assert(/href="#main"/.test(layout) && (layout.match(/id="main"/g) || []).length === 2, "skip-to-content link and #main on both layouts");
+  assert(!/High Renaissance|not Renaissance/.test(creditText(ART_WORKS["metzger-clock"]) + creditText(ART_WORKS["cellarius-harmonia"])), "credits: no internal period notes");
+  assert(existsSync(new URL("../public/favicon.ico", import.meta.url)), "public/favicon.ico present");
+  assert(/command === 'serve' \? \[inspectAttr\(\), react\(\)\] : \[react\(\)\]/.test(src("../vite.config.ts")), "inspectAttr only in dev");
+
+  // optional: built pre-render output
+  const built = process.env.BUNDLE_DIR;
+  if (built && existsSync(join(built, "404.html"))) {
+    const nf = readFileSync(join(built, "404.html"), "utf8");
+    assert(/name="robots" content="noindex"/.test(nf) && !/rel="canonical"/.test(nf) && !/id="ld-route"/.test(nf), "dist/404.html: noindex, no canonical, no route JSON-LD");
+    for (const m of sitemap.matchAll(/<loc>([^<]+)<\/loc>/g)) {
+      const path = m[1].slice(SITE_ORIGIN.length) || "/";
+      const html = readFileSync(join(built, path === "/" ? "index.html" : `${path.slice(1)}/index.html`), "utf8");
+      const meta = pageMeta(path);
+      const t = meta.title.replace(/&/g, "&amp;");
+      assert(html.includes(`<title>${t}</title>`) && html.includes(`<link rel="canonical" href="${m[1]}" />`) && html.includes(`<meta property="og:url" content="${m[1]}" />`), `dist${path}: title, canonical, og:url`);
+      assert(html.includes(`<meta property="og:image" content="${ogImage(path)}" />`) && html.includes(`<meta name="twitter:title" content="${t.replace(/"/g, "&quot;")}" />`), `dist${path}: og:image, twitter:title`);
+      const ld = JSON.parse((/<script type="application\/ld\+json" id="ld-route">([\s\S]*?)<\/script>/.exec(html) || ["", "null"])[1]);
+      assert(ld && JSON.stringify(ld) === JSON.stringify(routeHead(path).jsonLd), `dist${path}: route JSON-LD in static HTML`);
+      assert(!/code-path=/.test(html), `dist${path}: no code-path attributes`);
+    }
+    assert(!existsSync(join(built, "downloads", "ai-vs-the-sky.pdf")), "dist: no AI vs the Sky PDF");
+    const js = readdirSync(join(built, "assets")).filter((f) => f.endsWith(".js")).map((f) => readFileSync(join(built, "assets", f), "utf8")).join("\n");
+    assert(!/code-path|ai-vs-the-sky|78th birthday|sidebar_state/.test(js), "dist JS: no code-path, no PDF link, no birthday line, no sidebar cookie");
+    console.log(`pre-render output checked in ${built}`);
+  }
 }
 
 console.log(`check:schema OK — ${n} assertions`);

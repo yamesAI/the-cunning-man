@@ -3,12 +3,10 @@
 import { Link } from "react-router";
 import { PRESS } from "@/site/press";
 import { useMeta } from "@/hooks/useMeta";
+import { STATIC_META } from "@/site/pageMeta";
 
 export default function PressIndex() {
-  useMeta(
-    "Press Releases — The Cunning Man",
-    "Press releases from The Cunning Man: free Renaissance astrology, chaos magic, and rune tools — launch news, the astro trading clock, synastry meter, sigil engine, and rune cast."
-  );
+  useMeta(STATIC_META["/press"].title, STATIC_META["/press"].description);
   return (
     <div>
       <h1 className="text-3xl font-bold mb-1 font-smallcaps">✒ Press Room</h1>

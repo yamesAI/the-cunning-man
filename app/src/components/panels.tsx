@@ -34,7 +34,7 @@ export function PositionsPanel({ chart }: { chart: ChartData }) {
       <table className="tbl-ledger">
         <thead>
           <tr>
-            <th scope="col"></th>
+            <th scope="col"><span className="sr-only">Glyph</span></th>
             <th scope="col">Planet</th>
             <th scope="col">Longitude</th>
             <th scope="col">Hse</th>
@@ -147,7 +147,7 @@ export function AspectGridPanel({ chart }: { chart: ChartData }) {
       <table className="border-collapse mx-auto">
         <thead>
           <tr>
-            <th className={gth}></th>
+            <th className={gth}><span className="sr-only">Planet</span></th>
             {PLANETS.slice(0, -1).map((p) => (
               <th key={p} scope="col" className={gth} style={{ color: PLANET_COLOR[p], fontSize: 17, width: 30 }}>
                 <span aria-hidden="true">{PLANET_GLYPH[p]}</span>

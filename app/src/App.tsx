@@ -18,6 +18,8 @@ import DignitiesPage from './pages/site/DignitiesPage'
 import ChartsPage from './pages/site/ChartsPage'
 import ArticlesPage from './pages/site/ArticlesPage'
 import { RouteHead } from './components/RouteHead'
+import NotFoundPage from './pages/site/NotFoundPage'
+import { AboutPage, ContactPage, PrivacyPage } from './pages/site/InfoPages'
 
 export default function App() {
   return (
@@ -49,7 +51,10 @@ export default function App() {
           <Route path="/articles" element={<ArticlesPage />} />
           <Route path="/articles/:beat/:slug" element={<ArticlesPage />} />
           <Route path="/articles/*" element={<ArticlesPage />} />
-          <Route path="*" element={inIframe ? <Home /> : <SiteHome />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="*" element={inIframe ? <Home /> : <NotFoundPage />} />
         </Routes>
       </SiteLayout>
     </SkyProvider>

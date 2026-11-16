@@ -11,12 +11,13 @@ import {
   ASPECT_GLYPH, type PlanetKey, type SignKey,
 } from "@/astro/constants";
 import {
-  MAX_WINDOW_HOURS, checkWindow, clampEnd, findChanges, fmtDayTz, fmtLength, fromLocalInput,
-  isValidTimeZone, thisPlanetaryDay, toLocalInput, windowHours, type SkyChange,
+  MAX_WINDOW_HOURS, checkWindow, clampEnd, fmtDayTz, fmtLength, fromLocalInput,
+  isValidTimeZone, scanChanges, thisPlanetaryDay, toLocalInput, windowHours, type SkyChange,
 } from "@/astro/sessionsky";
 import { useSky } from "@/sky/sky-context";
 import { CitySearch } from "@/components/CitySearch";
 import { useMeta } from "@/hooks/useMeta";
+import { STATIC_META } from "@/site/pageMeta";
 
 type Preset = "custom" | "planetary-day" | "next-4" | "next-12";
 
@@ -55,12 +56,13 @@ const Sign = ({ s }: { s: SignKey }) => (
 
 function Section({ title, children, right }: { title: string; children: ReactNode; right?: ReactNode }) {
   return (
-    <section className="border-2 border-line bg-card p-3">
+    <section className="border-2 border-line bg-card p-3 min-w-0">
       <div className="flex items-baseline justify-between gap-2 mb-2">
         <h2 className="font-bold text-[15px] font-smallcaps">{title}</h2>
         {right}
       </div>
-      {children}
+      {/* M-5: tables scroll inside their section at 390 px instead of widening the page */}
+      <div className="overflow-x-auto">{children}</div>
     </section>
   );
 }
@@ -101,10 +103,7 @@ function planetaryDayState(now: Date, lat: number, lng: number): { state: Window
 }
 
 export default function SessionSkyPage() {
-  useMeta(
-    "The Cunning Man — Session Sky",
-    "Traditional sky for a time window you choose: essential dignities, planetary hours and the Moon, computed in your browser. For entertainment and study."
-  );
+  useMeta(STATIC_META["/sky"].title, STATIC_META["/sky"].description);
   const { now, loc, setLoc, refreshLocation } = useSky();
   const locZone = tzForLocation(loc.lat, loc.lng);
 
@@ -177,17 +176,46 @@ export default function SessionSkyPage() {
     [startMs, endMs, loc.lat, loc.lng]
   );
 
-  // The change scan takes up to about a second for 48h, so it runs after paint.
+  // The change scan builds a few hundred horoscopes (about half a second for
+  // 24h on a fast machine, many seconds on a slow one). It used to run in one
+  // blocking timer callback: the page froze on "Working through the window…"
+  // until it finished, and an exception left that text up for good
+  // (SIM-WALK-001). Now it runs in ~12 ms slices after paint, shows progress,
+  // and ends in either the result or a plain failure line.
   const scanKey = `${startMs}|${endMs}|${loc.lat}|${loc.lng}`;
-  const [scan, setScan] = useState<{ key: string; changes: SkyChange[] } | null>(null);
+  const [scan, setScan] = useState<{ key: string; changes: SkyChange[] | null; progress: number } | null>(null);
   useEffect(() => {
     if (!Number.isFinite(startMs)) return;
-    const id = setTimeout(() => {
-      setScan({ key: scanKey, changes: findChanges(new Date(startMs), new Date(endMs), loc.lat, loc.lng) });
-    }, 30);
-    return () => clearTimeout(id);
+    const it = scanChanges(new Date(startMs), new Date(endMs), loc.lat, loc.lng);
+    let id = 0;
+    let shown = -1;
+    const slice = () => {
+      const until = performance.now() + 12;
+      try {
+        let r = it.next();
+        while (!r.done && performance.now() < until) r = it.next();
+        if (r.done) {
+          setScan({ key: scanKey, changes: r.value, progress: 1 });
+          return;
+        }
+        const pct = Math.floor(r.value * 10);
+        if (pct !== shown) {
+          shown = pct;
+          setScan({ key: scanKey, changes: null, progress: r.value });
+        }
+        id = window.setTimeout(slice, 0);
+      } catch {
+        setScan({ key: scanKey, changes: null, progress: -1 });
+      }
+    };
+    id = window.setTimeout(slice, 0);
+    return () => window.clearTimeout(id);
   }, [scanKey, startMs, endMs, loc.lat, loc.lng]);
-  const changes = scan && scan.key === scanKey ? scan.changes : null;
+  const current = scan && scan.key === scanKey ? scan : null;
+  const changes = current ? current.changes : null;
+  const scanNote = current && current.progress < 0
+    ? "These changes could not be worked out for this window."
+    : `Working through the window… ${Math.round((current?.progress ?? 0) * 100)}%`;
 
   const phaseMoments = startChart
     ? startChart.nearestPhases.filter((p) => p.date.getTime() >= startMs && p.date.getTime() <= endMs)
@@ -351,7 +379,7 @@ export default function SessionSkyPage() {
             </Section>
           )}
 
-          <div className="grid lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* dignities */}
             <Section title="Essential dignities at window start" right={<span className="text-[11px] italic">{startChart.sect} chart · Lilly</span>}>
               <div className="overflow-x-auto">
@@ -393,7 +421,7 @@ export default function SessionSkyPage() {
               <p className="text-[11px] text-ink-soft mt-1">Term and face columns show the ruler of the degree. Score is Lilly's essential score.</p>
               <h3 className="font-bold text-[13px] mt-3 mb-1 font-smallcaps">Sign changes inside the window</h3>
               {changes === null ? (
-                <p className="text-[12px] italic">Working through the window…</p>
+                <p className="text-[12px] italic" role="status">{scanNote}</p>
               ) : signChanges.length === 0 ? (
                 <p className="text-[12px] italic">No planet changes sign inside this window.</p>
               ) : (
@@ -447,7 +475,7 @@ export default function SessionSkyPage() {
               )}
               <h3 className="font-bold text-[13px] mt-3 mb-1 font-smallcaps">Moon changes and phases inside the window</h3>
               {changes === null ? (
-                <p className="text-[12px] italic">Working through the window…</p>
+                <p className="text-[12px] italic" role="status">{scanNote}</p>
               ) : moonChanges.length === 0 && phaseMoments.length === 0 ? (
                 <p className="text-[12px] italic">The Moon keeps its sign and mansion, and no quarter falls, inside this window.</p>
               ) : (

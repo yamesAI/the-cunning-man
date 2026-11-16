@@ -1,5 +1,6 @@
 // Visible page still, credit, and art-sibling links (HUB-ART-001).
 // JSON-LD is injected via structuredData.ts / RouteHead, not here.
+// Links are inline-block with vertical padding: at least 24 px tap targets (QC-SITE-001 m-6).
 
 import { Link, useLocation } from "react-router";
 import { artForPath, contentPath, creditText } from "@/site/art";
@@ -7,9 +8,9 @@ import { artForPath, contentPath, creditText } from "@/site/art";
 function SiblingLink({ to }: { to: string }) {
   const label = to === "/" ? "Home" : to;
   if (to.startsWith("http")) {
-    return <a href={to} className="underline hover:text-seal">{label}</a>;
+    return <a href={to} className="inline-block py-1 underline hover:text-seal">{label}</a>;
   }
-  return <Link to={to} className="underline hover:text-seal">{label}</Link>;
+  return <Link to={to} className="inline-block py-1 underline hover:text-seal">{label}</Link>;
 }
 
 export function PageArt() {
@@ -29,7 +30,7 @@ export function PageArt() {
       />
       <figcaption className="text-[12px] text-ink-soft mt-2 leading-relaxed">
         <span>{creditText(work)} </span>
-        <a href={work.sourceRecord} target="_blank" rel="noopener noreferrer" className="underline hover:text-seal">
+        <a href={work.sourceRecord} target="_blank" rel="noopener noreferrer" className="inline-block py-1 underline hover:text-seal">
           Source record ↗
         </a>
         {assignment.siblings.length > 0 ? (

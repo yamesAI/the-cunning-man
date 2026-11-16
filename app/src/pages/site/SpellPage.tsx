@@ -7,14 +7,15 @@ import { fmtTimeTz, tzOffsetLabel } from "@/astro/format";
 import { PLANET_GLYPH } from "@/astro/constants";
 import { Link } from "react-router";
 import { useMeta } from "@/hooks/useMeta";
+import { STATIC_META } from "@/site/pageMeta";
 
 const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 const ART = {
   love: {
     title: "♀ The Love Working",
-    meta: "Free Love Spell Timing — Venus Hours, Runes & Sigils",
-    desc: "A traditional love working timed by the hour of Venus: candle, rune, and chaos sigil method, with the next fit Venus hours computed live for your place.",
+    meta: STATIC_META["/spells/love"].title,
+    desc: STATIC_META["/spells/love"].description,
     glyph: PLANET_GLYPH.venus,
     planet: "Venus",
     rulerKey: "venus" as const,
@@ -34,8 +35,8 @@ const ART = {
   },
   money: {
     title: "♃ The Money Working",
-    meta: "Free Money Spell Timing — Jupiter Hours, Runes & Sigils",
-    desc: "A traditional prosperity working timed by the hour of Jupiter: candle, rune, and chaos sigil method, with the next fit Jupiter hours computed live for your place.",
+    meta: STATIC_META["/spells/money"].title,
+    desc: STATIC_META["/spells/money"].description,
     glyph: PLANET_GLYPH.jupiter,
     planet: "Jupiter",
     rulerKey: "jupiter" as const,

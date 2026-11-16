@@ -3,8 +3,10 @@
 // Rules: no Offer / price / MonetaryAmount anywhere (free tools use
 // isAccessibleForFree); press items, including trading-clock, are Article,
 // not NewsArticle (owner 2026-11-12 09:05). Unknown paths and slugs get no
-// route JSON-LD. No publisher/creator. Visible disclaimers live in the page,
-// not here (schema.org has no disclaimer property).
+// route JSON-LD and no canonical (HUB-FIX-001, QC-SITE-001 M-2). No
+// publisher/creator. Visible disclaimers live in the page, not here (schema.org
+// has no disclaimer property). The operator Organization (brand name only)
+// appears on /about and /contact alone.
 
 import { PRESS } from "./press";
 import {
@@ -25,6 +27,10 @@ import {
 import {
   ARTICLES, ARTICLES_DESCRIPTION, ARTICLES_PATH, ARTICLES_TITLE, articleFromPath, articlePath, type ArticleItem,
 } from "./articles";
+import {
+  ABOUT_DESCRIPTION, ABOUT_PATH, ABOUT_TITLE, CONTACT_DESCRIPTION, CONTACT_PATH, CONTACT_TITLE, OPERATOR_NAME,
+  PRIVACY_DESCRIPTION, PRIVACY_PATH, PRIVACY_TITLE,
+} from "./info";
 
 export const SITE_ORIGIN = "https://cunning-man.vercel.app";
 export const SITE_NAME = "The Cunning Man";
@@ -363,7 +369,7 @@ function figurePageGraph(f: ChartFigure): Json {
     about: person,
     mainEntity: person,
     isBasedOn: adbNode(f),
-    citation: f.hook.url,
+    ...(f.hook ? { citation: f.hook.url } : {}),
     breadcrumb: {
       "@type": "BreadcrumbList",
       itemListElement: [
@@ -451,6 +457,8 @@ function articleGraph(a: ArticleItem): Json {
     relatedLink: ARTICLES.filter((x) => x.beat === a.beat && x.slug !== a.slug).map((x) => absUrl(articlePath(x))),
   };
 }
+
+const OPERATOR: Json = { "@type": "Organization", name: OPERATOR_NAME, url: `${SITE_ORIGIN}/` };
 
 /** Exact known static paths -> JSON-LD. Lower-case, no trailing slash. */
 const STATIC: Record<string, () => Json> = {
@@ -546,6 +554,12 @@ const STATIC: Record<string, () => Json> = {
   [DIGNITIES_PATH]: dignitiesPage,
   [CHARTS_PATH]: chartsPage,
   [ARTICLES_PATH]: articlesPage,
+  // HUB-FIX-001: About (AboutPage) and Contact (ContactPage) are about the
+  // operator, an Organization with the brand name only (no person, no contact
+  // point: the site has none). Privacy is a plain WebPage.
+  [ABOUT_PATH]: () => ({ ...base("AboutPage", ABOUT_PATH, ABOUT_TITLE, ABOUT_DESCRIPTION), about: OPERATOR, mainEntity: OPERATOR }),
+  [CONTACT_PATH]: () => ({ ...base("ContactPage", CONTACT_PATH, CONTACT_TITLE, CONTACT_DESCRIPTION), about: OPERATOR }),
+  [PRIVACY_PATH]: () => base("WebPage", PRIVACY_PATH, PRIVACY_TITLE, PRIVACY_DESCRIPTION),
 };
 
 /** Normalise a location pathname for lookup: strip trailing slashes. */
@@ -555,8 +569,8 @@ function norm(pathname: string): string {
 }
 
 export interface RouteHead {
-  /** Absolute canonical URL for the content this path renders. */
-  canonical: string;
+  /** Absolute canonical URL for the content this path renders; null for a not-found page. */
+  canonical: string | null;
   /** Route JSON-LD, or null when the path or slug is unknown. */
   jsonLd: Json | null;
 }
@@ -571,9 +585,8 @@ function routeHeadRaw(pathname: string): RouteHead {
     // Slug match is exact, as in PressRelease.tsx.
     const item = PRESS.find((x) => x.slug === m[1]);
     if (!item) {
-      // Unknown slug: the page falls back to PRESS[0]; point canonical at that
-      // content but emit no Article (never inherit another item's JSON-LD).
-      return { canonical: absUrl(`/press/${PRESS[0].slug}`), jsonLd: null };
+      // Unknown slug: the not-found page (M-2): no canonical, no JSON-LD.
+      return { canonical: null, jsonLd: null };
     }
     const canonical = absUrl(`/press/${item.slug}`);
     const date = isoDate(item.date);
@@ -628,9 +641,9 @@ function routeHeadRaw(pathname: string): RouteHead {
     return { canonical: absUrl(path), jsonLd: libraryBookPage(book) };
   }
 
-  // Unknown path: the catch-all renders the home content; canonical is the
-  // root, and no FAQPage or other route JSON-LD is emitted.
-  return { canonical: absUrl("/"), jsonLd: null };
+  // Unknown path: the catch-all renders the not-found page (M-2): no canonical,
+  // no route JSON-LD.
+  return { canonical: null, jsonLd: null };
 }
 
 function pageImageObject(pathname: string): Json | null {
@@ -652,11 +665,24 @@ function pageImageObject(pathname: string): Json | null {
   return img;
 }
 
+// QC-SITE-001 m-2: primaryImageOfPage belongs to WebPage types only, so a
+// WebApplication carries the still as `image` (a Thing property).
 function attachArt(pathname: string, head: RouteHead): RouteHead {
   if (!head.jsonLd) return head;
   const img = pageImageObject(pathname);
   if (!img) return head;
-  return { canonical: head.canonical, jsonLd: { ...head.jsonLd, primaryImageOfPage: img } };
+  const key = head.jsonLd["@type"] === "WebApplication" ? "image" : "primaryImageOfPage";
+  return { canonical: head.canonical, jsonLd: { ...head.jsonLd, [key]: img } };
+}
+
+/** Site default share image (the home still) for routes without their own. */
+export const DEFAULT_OG_IMAGE = `${SITE_ORIGIN}/art/beham-astrologia.webp`;
+
+/** Absolute share image (og:image / twitter:image) for a pathname (M-3). */
+export function ogImage(pathname: string): string {
+  const p = pathname.replace(/\/+$/, "") || "/";
+  const hit = artForPath(p);
+  return hit ? absUrl(contentPath(hit.work)) : DEFAULT_OG_IMAGE;
 }
 
 export function routeHead(pathname: string): RouteHead {

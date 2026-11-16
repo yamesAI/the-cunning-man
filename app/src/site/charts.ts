@@ -16,6 +16,12 @@ export const CHARTS_SUBTITLE =
 export const CHARTS_DESCRIPTION =
   "Study pages reading public figures' natal charts by Lilly's essential dignities, with Astro-Databank birth data and its Rodden rating. For entertainment and study.";
 export const CHARTS_PRESS_SLUG = "charts";
+/** SIM-WALK-001: one plain line for cold landings on /charts and its pages. */
+export const SITE_INTRO =
+  "The Cunning Man is a free site for studying Renaissance astrology: live chart tools, Lilly's tables of dignities and a library of the old sources. No account, no fee.";
+/** SIM-CROWD-001: what the score column means, so a low score is not read as a verdict on the person. */
+export const SCORE_NOTE =
+  "Score is Lilly's point count of each planet's essential dignity: points added for its own house, exaltation, triplicity, term or face, and taken away for detriment, fall, or none of these (peregrine). It describes where the planet stands by the old rules, not the person.";
 
 export type RoddenRating = "AA" | "A" | "B";
 export const ALLOWED_RATINGS: readonly RoddenRating[] = ["AA", "A", "B"];
@@ -42,7 +48,9 @@ export interface ChartFigure {
   adbLastEdit: string;
   verifiedOn: string;
   dataNote?: string;       // one plain line where the record or the read is sensitive
-  hook: { sentence: string; outlet: string; date: string; url: string };
+  patternNote?: string;    // one plain line naming an aspect pattern the engine shows (checked in check:schema)
+  hook?: { sentence: string; outlet: string; date: string; url: string }; // optional "in the news" line
+
   pressSlug: string;
   artId: string;
 }
@@ -75,12 +83,7 @@ export const CHART_FIGURES: ChartFigure[] = [
     adbLastEdit: "2026-07-28",
     verifiedOn: "2026-11-15",
     dataNote: "Jupiter sits in the last minutes of Sagittarius, a few arc-minutes from Capricorn, where Lilly would count it in fall rather than in its own house.",
-    hook: {
-      sentence: "14 November 2026 was the King's 78th birthday, marked by a clip recorded for Elton John's radio show.",
-      outlet: "Reuters summary via Devdiscourse",
-      date: "2026-11-14",
-      url: "https://www.devdiscourse.com/article/international/4006986-reuters-entertainment-news-summary",
-    },
+    // HUB-FIX-001 (owner 2026-11-15 16:52): the birthday news line is cut; no hook.
     pressSlug: "chart-charles-iii",
     artId: "apian-astronomicum",
   },
@@ -167,6 +170,10 @@ export const CHART_FIGURES: ChartFigure[] = [
     collector: "Rodden",
     adbLastEdit: "2024-03-26",
     verifiedOn: "2026-11-15",
+    // SIM-CROWD-001 / owner 2026-11-15 16:52: the page carries the pattern the
+    // planned post names (wording after SOC-CELEB-001, with its note that the
+    // name is modern). check:schema confirms each aspect with the engine.
+    patternNote: "The Moon in Leo squares Mars and Saturn in Taurus and Jupiter in Scorpio, and Jupiter opposes Mars and Saturn. Modern astrologers call this shape a fixed T-square; the name is modern, while squares and oppositions are classical aspects.",
     hook: {
       sentence: "She is among the new Rock & Roll Hall of Fame inductees honoured at the same 14 November 2026 ceremony.",
       outlet: "AP brief via Tuscola Today",
@@ -241,6 +248,21 @@ export interface PlanetRead {
   term: string;
   face: string;
   score: number;
+}
+
+export interface AspectRead {
+  p1: PlanetKey;
+  p2: PlanetKey;
+  aspectKey: string;
+  orb: number;
+}
+
+/** Major aspects between the seven traditional planets, from the engine's aspectarian. */
+export function figureAspects(chart: ChartData): AspectRead[] {
+  const seven = new Set<PlanetKey>(CLASSICAL_PLANETS);
+  return chart.aspectsGrid
+    .filter((a) => seven.has(a.p1) && seven.has(a.p2))
+    .map((a) => ({ p1: a.p1, p2: a.p2, aspectKey: a.aspectKey, orb: a.orb }));
 }
 
 export function figureReads(chart: ChartData): PlanetRead[] {

@@ -27,6 +27,7 @@ export interface ArtWork {
   acquireLicensePage: string;
   sourceRecord: string;
   creditNote: string;
+  /** Internal curation note; never part of the visible credit or creditText (QC-SITE-001 m-7). */
   periodNote?: string;
   alt: string;
 }
@@ -86,7 +87,6 @@ export const ART_WORKS: Record<string, ArtWork> = {
     acquireLicensePage: CC0_DEED,
     sourceRecord: MET("209211"),
     creditNote: "Gift of J. Pierpont Morgan, 1917.",
-    periodNote: "Late Renaissance or early modern, not High Renaissance.",
     alt: "Gilded brass astronomical table clock, 1568, Metropolitan Museum of Art.",
   },
   "durer-northern-hemisphere": {
@@ -224,7 +224,6 @@ export function creditText(work: ArtWork): string {
   const bits = [work.title, work.artist];
   if (work.dateText) bits.push(work.dateText);
   bits.push(work.licenseKind);
-  if (work.periodNote) bits.push(work.periodNote);
   bits.push(work.creditNote);
   return bits.join(", ");
 }

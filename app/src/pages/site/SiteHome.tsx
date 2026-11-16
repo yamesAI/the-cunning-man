@@ -2,6 +2,7 @@
 
 import { Link } from "react-router";
 import { useMeta } from "@/hooks/useMeta";
+import { STATIC_META } from "@/site/pageMeta";
 
 const TOOLS = [
   {
@@ -53,15 +54,12 @@ const TOOLS = [
 
 const PRESS_TEASERS = [
   { to: "/press/launch", title: "The Cunning Man Opens Its Doors: Centuries-Old Arts, Free for All" },
-  { to: "/press/trading-clock", title: "Renaissance Astrological Clock Built for Day Traders" },
+  { to: "/press/trading-clock", title: "Renaissance Astrological Clock Adds a Three-Day Electional Scanner" },
   { to: "/press/synastry-meter", title: "Free Synastry Meter Reads Relationships the Old Way" },
 ];
 
 export default function SiteHome() {
-  useMeta(
-    "The Cunning Man — Free Renaissance Astrology, Chaos Magic & Rune Tools",
-    "Free cunning-man arts online: a live Renaissance astrological clock, synastry meter, launch elections, chaos sigil engine, rune casting, and traditional spells for love and money."
-  );
+  useMeta(STATIC_META["/"].title, STATIC_META["/"].description);
   return (
     <div>
       {/* hero */}

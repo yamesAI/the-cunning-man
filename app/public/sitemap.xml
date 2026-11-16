@@ -40,4 +40,7 @@
   <url><loc>https://cunning-man.vercel.app/press/chart-liza-minnelli</loc><priority>0.5</priority></url>
   <url><loc>https://cunning-man.vercel.app/press/chart-billy-idol</loc><priority>0.5</priority></url>
   <url><loc>https://cunning-man.vercel.app/press/chart-queen-latifah</loc><priority>0.5</priority></url>
+  <url><loc>https://cunning-man.vercel.app/about</loc><priority>0.3</priority></url>
+  <url><loc>https://cunning-man.vercel.app/contact</loc><priority>0.3</priority></url>
+  <url><loc>https://cunning-man.vercel.app/privacy</loc><priority>0.3</priority></url>
 </urlset>

@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useMeta } from "@/hooks/useMeta";
+import { STATIC_META } from "@/site/pageMeta";
 
 interface SigilData {
   intention: string;
@@ -74,10 +75,7 @@ function SigilSvg({ data }: { data: SigilData }) {
 }
 
 export default function SigilPage() {
-  useMeta(
-    "Free Chaos Sigil Engine — Turn an Intention into a Sigil",
-    "The Austin Spare method, automated: write your intention, strike the vowels, keep each letter once, and the engine draws your sigil. Free chaos magic tool."
-  );
+  useMeta(STATIC_META["/sigil"].title, STATIC_META["/sigil"].description);
   const [text, setText] = useState("MY WILL BRINGS WEALTH TO ME");
   const [run, setRun] = useState(1);
 
@@ -121,9 +119,9 @@ export default function SigilPage() {
           <section aria-labelledby="reduction-h" className="border-2 border-line bg-card p-4 text-[14px]">
             <h2 id="reduction-h" className="font-bold mb-2 font-smallcaps">The reduction</h2>
             <dl>
-              <p className="mb-1"><dt className="inline text-ink-soft">Intention:</dt> <dd className="inline font-bold">{data.intention}</dd></p>
-              <p className="mb-1"><dt className="inline text-ink-soft">Vowels struck:</dt> <dd className="inline font-bold tracking-[0.2em]">{data.consonants}</dd></p>
-              <p className="mb-3"><dt className="inline text-ink-soft">Letters kept once:</dt> <dd className="inline font-bold tracking-[0.2em] text-seal">{data.letters.join(" ")}</dd></p>
+              <div className="mb-1"><dt className="inline text-ink-soft">Intention:</dt> <dd className="inline font-bold">{data.intention}</dd></div>
+              <div className="mb-1"><dt className="inline text-ink-soft">Vowels struck:</dt> <dd className="inline font-bold tracking-[0.2em]">{data.consonants}</dd></div>
+              <div className="mb-3"><dt className="inline text-ink-soft">Letters kept once:</dt> <dd className="inline font-bold tracking-[0.2em] text-seal">{data.letters.join(" ")}</dd></div>
             </dl>
             <h2 className="font-bold mb-1 font-smallcaps">Working the sigil</h2>
             <ol className="list-decimal ml-5 space-y-1 text-[13px]">
