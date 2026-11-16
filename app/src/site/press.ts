@@ -29,15 +29,17 @@ export const PRESS: PressItem[] = [
   },
   {
     slug: "trading-clock",
-    title: "Free Astrological Clock for Day Traders Adds Do-Not-Trade Windows and 3-Day Election Scanner",
+    // M-1 (owner 2026-11-13 06:56, t633s2696): study-only wording. Slug and
+    // Article type kept. The owner reads this wording before any deploy.
+    title: "Free Renaissance Astrological Clock Adds a Three-Day Electional Scanner for Study",
     date: "September 1, 2026",
     dateline: "NEW YORK",
     excerpt:
-      "A free Renaissance-style astrological clock now scans three days ahead for the strongest trading entry windows and flags hours when tradition says to sit on your hands.",
+      "A free Renaissance-style astrological clock now looks three days ahead for the strongest electional moment by the classical rules, and marks the hours when the old books say to begin nothing new.",
     body: [
-      "The Cunning Man today announced its Astro Clock, a free browser instrument built for day traders who keep an eye on the sky. The clock draws the Ascendant and planets in real time and continuously scans the next three days of the 6 a.m.–3 p.m. UTC-5 session for the single strongest electional window.",
-      "The scanner follows the classical doctrine of elections: the condition of the Moon, her next perfecting aspect, the angularity of Jupiter, Venus and Mercury, and the dignity of the Ascendant ruler. Periods when the Moon is void of course, combust, or in the via combusta are displayed plainly as hours not to trade.",
-      "“Traders already watch clocks, sessions, and calendars,” the site's keeper said. “This is simply the oldest clock of all, drawn properly, with the hours marked where the old books say to stand aside.”",
+      "The Cunning Man today announced its Astro Clock, a free browser instrument for students of traditional astrology. The clock draws the Ascendant and planets in real time and looks three days ahead for the single strongest electional moment.",
+      "The scanner follows the classical doctrine of elections: the condition of the Moon, her next perfecting aspect, the angularity of Jupiter, Venus and Mercury, and the dignity of the Ascendant ruler. Periods when the Moon is void of course, combust, or in the via combusta are shown plainly as hours in which the old books say to begin nothing new.",
+      "“Astrologers have always kept clocks,” the site's keeper said. “This is simply the oldest clock of all, drawn properly, with the hours marked where the old books say to stand aside.”",
       "The instrument is free and requires no account. It is offered for study and entertainment, and is not financial advice.",
       "The clock is live now at cunning-man.vercel.app/clock.",
     ],
@@ -107,13 +109,13 @@ export const PRESS: PressItem[] = [
   },
   {
     slug: "chart-charles-iii",
-    title: "On His 78th Birthday, a Study of King Charles III's Chart by Lilly's Rules",
+    title: "A Study of King Charles III's Chart by Lilly's Rules",
     date: "November 15, 2026",
     dateline: "LONDON",
     excerpt:
       "A study page reads the King's natal chart, a night chart with Venus and Jupiter in their own houses, from Astro-Databank data rated A.",
     body: [
-      "The King marked his 78th birthday on 14 November 2026. The Cunning Man has published a study page reading his natal chart by William Lilly's essential dignities.",
+      "The Cunning Man has published a study page reading the natal chart of King Charles III by William Lilly's essential dignities.",
       "The page uses the Astro-Databank record (rated A, from a news report): 14 November 1948, 21:14 GMT, London. By Lilly's rules it is a night chart. Venus stands in her own house of Libra and Jupiter in his own house of Sagittarius, in its last minutes before Capricorn; the Moon is in her exaltation in Taurus.",
       "The page reads the chart only and links each planet to its page in the site's Dignities section.",
     ],

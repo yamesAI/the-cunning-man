@@ -8,9 +8,12 @@ import { useSky } from "@/sky/sky-context";
 import { CITIES } from "@/data/cities";
 import { SquareChart } from "@/components/SquareChart";
 import { useTilt } from "@/hooks/useTilt";
+import { inIframe } from "@/lib/env";
 import {
   PositionsPanel, DignitiesPanel, MoonAspectsPanel, AspectGridPanel, PlanetaryHoursPanel, MoonPanel, ElectionPanel,
 } from "@/components/panels";
+
+const Main = inIframe ? "main" : "div";
 
 export default function Home() {
   const { now, loc, setLoc, refreshLocation } = useSky();
@@ -69,7 +72,9 @@ export default function Home() {
   return (
     <div data-kimi-root className="kimi-host-safe-context min-h-screen lg:h-screen lg:overflow-hidden flex flex-col bg-parchment text-ink font-ui">
       {/* header */}
-      <header data-kimi-priority="p1" className="kimi-host-safe-header shrink-0 border-b-2 border-line bg-parchment-deep px-4 py-2 flex flex-wrap items-center gap-x-6 gap-y-2">
+      {/* m-4: plain divs, not header/footer landmarks: the site chrome owns those.
+          The clock is the page's main only when embedded without the chrome. */}
+      <div data-kimi-priority="p1" className="kimi-host-safe-header shrink-0 border-b-2 border-line bg-parchment-deep px-4 py-2 flex flex-wrap items-center gap-x-6 gap-y-2">
         <div>
           <h1 className="text-xl font-bold tracking-wide">Shield Astrological Clock</h1>
           <p className="text-[11px] italic text-ink-soft">Live traditional chart · updates every second</p>
@@ -146,10 +151,10 @@ export default function Home() {
             Outer planets
           </label>
         </div>
-      </header>
+      </div>
 
       {/* main layout — fills the viewport on large screens */}
-      <main className="flex-1 min-h-0 flex flex-col lg:flex-row gap-3 p-3">
+      <Main className="flex-1 min-h-0 flex flex-col lg:flex-row gap-3 p-3">
         {/* left column */}
         <div data-kimi-priority="p2" className="flex lg:flex-col flex-wrap gap-3 lg:w-[350px] shrink-0 [&>*]:w-full lg:overflow-y-auto lg:overflow-x-hidden lg:pr-1">
           <DignitiesPanel chart={chart} />
@@ -171,12 +176,12 @@ export default function Home() {
           <PlanetaryHoursPanel chart={chart} now={viewTime} />
           <MoonPanel chart={chart} now={viewTime} />
         </div>
-      </main>
+      </Main>
 
-      <footer data-kimi-priority="p3" className="shrink-0 px-4 pb-2 text-[11px] italic text-ink-soft">
+      <div data-kimi-priority="p3" className="shrink-0 px-4 pb-2 text-[11px] italic text-ink-soft">
         Tropical zodiac · Geocentric · Regiomontanus houses · Egyptian terms · Live geocentric positions
         recomputed in your browser — in the tradition of Renaissance astrology.
-      </footer>
+      </div>
     </div>
   );
 }

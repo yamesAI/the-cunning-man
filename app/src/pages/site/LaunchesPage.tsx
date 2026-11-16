@@ -6,6 +6,7 @@ import { tzForLocation } from "@/astro/engine";
 import { fmtTimeTz, tzOffsetLabel } from "@/astro/format";
 import { PLANET_GLYPH, PLANET_LABEL } from "@/astro/constants";
 import { useMeta } from "@/hooks/useMeta";
+import { STATIC_META } from "@/site/pageMeta";
 
 function fmtDay(d: Date, tz: string): string {
   return new Intl.DateTimeFormat("en-US", {
@@ -14,10 +15,7 @@ function fmtDay(d: Date, tz: string): string {
 }
 
 export default function LaunchesPage() {
-  useMeta(
-    "Free Launch Elections — Elect the Hour to Begin a Venture",
-    "Electional astrology scanner: find the strongest moment in the next 7 days to launch a business, sign a contract, publish, or open a venture — free."
-  );
+  useMeta(STATIC_META["/launches"].title, STATIC_META["/launches"].description);
   const [lat, setLat] = useState("51.5074");
   const [lng, setLng] = useState("-0.1278");
   const [now, setNow] = useState(() => new Date());

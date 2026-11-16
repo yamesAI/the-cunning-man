@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { computeSynastry, pointLabel } from "@/astro/synastry";
 import { ASPECT_GLYPH } from "@/astro/constants";
 import { useMeta } from "@/hooks/useMeta";
+import { STATIC_META } from "@/site/pageMeta";
 
 function Meter({ score }: { score: number }) {
   // semicircular gauge, needle at score 0..100
@@ -63,10 +64,7 @@ function BirthInput({ label, dt, setDt }: { label: string; dt: string; setDt: (v
 }
 
 export default function SynastryPage() {
-  useMeta(
-    "Free Synastry Meter — Relationship Compatibility by Renaissance Astrology",
-    "Cast two birth charts and read their sympathy the old way: Sun, Moon, Venus, Mars and the Ascendant weighed into one synastry score, free."
-  );
+  useMeta(STATIC_META["/synastry"].title, STATIC_META["/synastry"].description);
   const [dtA, setDtA] = useState("1990-06-15T10:30");
   const [dtB, setDtB] = useState("1992-11-02T18:45");
   const [lat, setLat] = useState("51.5074");

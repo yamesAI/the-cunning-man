@@ -1,13 +1,14 @@
-// Single press release.
+// Single press release. Unknown slugs get the not-found page (QC-SITE-001
+// M-2), never another release. Title and description come from RouteHead.
 
 import { Link, useParams } from "react-router";
 import { PRESS } from "@/site/press";
-import { useMeta } from "@/hooks/useMeta";
+import NotFoundPage from "./NotFoundPage";
 
 export default function PressRelease() {
   const { slug } = useParams();
-  const p = PRESS.find((x) => x.slug === slug) ?? PRESS[0];
-  useMeta(`${p.title} — The Cunning Man`, p.excerpt);
+  const p = PRESS.find((x) => x.slug === slug);
+  if (!p) return <NotFoundPage />;
   return (
     <article className="max-w-3xl">
       <p className="text-[12px] mb-2"><Link to="/press" className="underline text-ink-soft">← All releases</Link></p>

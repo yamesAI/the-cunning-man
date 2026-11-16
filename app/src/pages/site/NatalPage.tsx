@@ -15,6 +15,7 @@ import { SquareChart } from "@/components/SquareChart";
 import { TestimonyCard } from "@/components/TestimonyCard";
 import { CitySearch } from "@/components/CitySearch";
 import { useMeta } from "@/hooks/useMeta";
+import { STATIC_META } from "@/site/pageMeta";
 
 // datetime-local values are wall time without a zone; shift the stored UTC
 // instant into the browser's zone so the field shows the entrant's local moment
@@ -46,10 +47,7 @@ function TransitRow({ hit, exactAt, now }: { hit: TransitHit; exactAt: Date | nu
 }
 
 export default function NatalPage(): ReactElement {
-  useMeta(
-    "Natal Chart & Live Transits — The Cunning Man",
-    "Cast your natal chart by the old art and watch the living sky aspect it: exact transits, applying and separating, with testimony from Lilly, Ptolemy, Bonatti and the tradition."
-  );
+  useMeta(STATIC_META["/natal"].title, STATIC_META["/natal"].description);
   const { now, loc } = useSky();
   const [profile, setProfile] = useState<NatalProfile | null>(() => loadNatal());
   const [editing, setEditing] = useState(false);

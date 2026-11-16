@@ -3,14 +3,12 @@
 import { useState } from "react";
 import { RUNES, drawRunes } from "@/site/runes";
 import { useMeta } from "@/hooks/useMeta";
+import { STATIC_META } from "@/site/pageMeta";
 
 const POSITIONS = ["What has been", "What is", "What may come"];
 
 export default function RunesPage() {
-  useMeta(
-    "Free Rune Cast — Elder Futhark Rune Reading Online",
-    "Cast the Elder Futhark runes free: a single lot for a quick answer, or the three-Norn spread of what has been, what is, and what may come."
-  );
+  useMeta(STATIC_META["/runes"].title, STATIC_META["/runes"].description);
   const [count, setCount] = useState<1 | 3>(3);
   const [draw, setDraw] = useState<number[] | null>(() => drawRunes(3));
 

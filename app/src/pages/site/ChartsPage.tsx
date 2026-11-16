@@ -6,14 +6,20 @@
 import { useMemo, type ReactNode } from "react";
 import { Link, useLocation } from "react-router";
 import {
-  CHARTS_DESCRIPTION, CHARTS_PATH, CHARTS_PRESS_SLUG, CHARTS_SUBTITLE, CHARTS_TITLE, CHART_FIGURES,
-  figureChart, figureFromPath, figurePageDescription, figurePageName, figurePath, figureReads, type ChartFigure,
+  CHARTS_DESCRIPTION, CHARTS_PATH, CHARTS_PRESS_SLUG, CHARTS_SUBTITLE, CHARTS_TITLE, CHART_FIGURES, SCORE_NOTE, SITE_INTRO,
+  figureAspects, figureChart, figureFromPath, figurePageDescription, figurePageName, figurePath, figureReads, type ChartFigure,
 } from "@/site/charts";
+import { PLANET_LABEL } from "@/astro/constants";
 import { planetPath } from "@/site/dignities";
 import { useMeta } from "@/hooks/useMeta";
 
 function longDate(iso: string): string {
   return new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-GB", { timeZone: "UTC", day: "numeric", month: "long", year: "numeric" });
+}
+
+/** SIM-WALK-001: says what the site is, for readers who land here cold. */
+function SiteIntro() {
+  return <p className="text-[13px] max-w-3xl mb-2">{SITE_INTRO}</p>;
 }
 
 function Disclaimer() {
@@ -28,6 +34,7 @@ function ChartsChrome({ children }: { children: ReactNode }) {
   return (
     <div>
       <h1 className="text-3xl font-bold mb-1 font-smallcaps">☉ Charts</h1>
+      <SiteIntro />
       <p className="text-[14px] text-ink-soft max-w-3xl mb-2">{CHARTS_SUBTITLE}</p>
       <Disclaimer />
       {children}
@@ -51,6 +58,7 @@ function FigurePage({ figure }: { figure: ChartFigure }) {
   useMeta(figurePageName(figure), figurePageDescription(figure));
   const chart = useMemo(() => figureChart(figure), [figure]);
   const reads = figureReads(chart);
+  const aspects = figureAspects(chart);
   const siblings = CHART_FIGURES.filter((f) => f.slug !== figure.slug);
   return (
     <div>
@@ -64,6 +72,7 @@ function FigurePage({ figure }: { figure: ChartFigure }) {
         </ol>
       </nav>
       <h1 className="text-3xl font-bold mb-1 font-smallcaps">☉ The chart of {figure.name}</h1>
+      <SiteIntro />
       <p className="text-[14px] text-ink-soft max-w-3xl mb-2">{figurePageDescription(figure)}</p>
       <Disclaimer />
       <p className="text-[13px] mb-4">
@@ -79,7 +88,7 @@ function FigurePage({ figure }: { figure: ChartFigure }) {
           <dt className="font-bold">Rodden rating</dt><dd>{figure.roddenRating} · data source: {figure.dataSource} · collector: {figure.collector}</dd>
           <dt className="font-bold">Source</dt>
           <dd>
-            <a href={figure.adbUrl} target="_blank" rel="noopener noreferrer" className="underline hover:text-seal">Astro-Databank record ↗</a>{" "}
+            <a href={figure.adbUrl} target="_blank" rel="noopener noreferrer" className="inline-block py-1 underline hover:text-seal">Astro-Databank record ↗</a>{" "}
             <span className="text-ink-soft">(last edited {figure.adbLastEdit}; read {figure.verifiedOn})</span>
           </dd>
         </dl>
@@ -103,7 +112,7 @@ function FigurePage({ figure }: { figure: ChartFigure }) {
             <tbody>
               {reads.map((r) => (
                 <tr key={r.key} className="border-b border-line align-top">
-                  <td className="py-1 pr-3"><Link to={planetPath(r.key)} className="underline">{r.name}</Link></td>
+                  <td className="py-1 pr-3"><Link to={planetPath(r.key)} className="inline-block py-1 underline">{r.name}</Link></td>
                   <td className="py-1 pr-3 tabular-nums">{r.position}</td>
                   <td className="py-1 pr-3">{r.condition}</td>
                   <td className="py-1 pr-3">{r.term}</td>
@@ -114,9 +123,27 @@ function FigurePage({ figure }: { figure: ChartFigure }) {
             </tbody>
           </table>
         </div>
+        <p className="text-[12px] text-ink-soft mt-2">{SCORE_NOTE}</p>
         <p className="text-[12px] text-ink-soft mt-2">
           This page reads the birth chart only. It says nothing about the person's character, private life or future.
         </p>
+      </section>
+
+      <section aria-labelledby="chart-aspects" className="max-w-3xl mb-6">
+        <h2 id="chart-aspects" className="text-lg font-bold mb-2 font-smallcaps">Aspects between the seven planets</h2>
+        {figure.patternNote ? <p className="text-[13px] mb-2">{figure.patternNote}</p> : null}
+        {aspects.length === 0 ? (
+          <p className="text-[13px]">No major aspects between the seven planets within the engine's orbs.</p>
+        ) : (
+          <ul className="text-[13px] grid sm:grid-cols-2 gap-x-6">
+            {aspects.map((a) => (
+              <li key={`${a.p1}-${a.p2}`} className="tabular-nums">
+                {PLANET_LABEL[a.p1]} {a.aspectKey} {PLANET_LABEL[a.p2]} <span className="text-ink-soft">(orb {a.orb.toFixed(1)}°)</span>
+              </li>
+            ))}
+          </ul>
+        )}
+        <p className="text-[12px] text-ink-soft mt-2">Computed by the same engine and orbs as the natal page's aspect grid.</p>
       </section>
 
       <section aria-labelledby="chart-links" className="max-w-3xl mb-6 text-[13px] space-y-1">
@@ -126,11 +153,13 @@ function FigurePage({ figure }: { figure: ChartFigure }) {
           <Link to="/library" className="underline">Library</Link>, with the tables on{" "}
           <Link to="/dignities" className="underline">Dignities and Correspondences</Link>.
         </p>
-        <p><Link to="/natal" className="underline">Cast your own chart</Link></p>
-        <p>
-          In the news ({figure.hook.date}): {figure.hook.sentence}{" "}
-          <a href={figure.hook.url} target="_blank" rel="noopener noreferrer" className="underline hover:text-seal">{figure.hook.outlet} ↗</a>
-        </p>
+        <p><Link to="/natal" className="inline-block py-1 underline">Cast your own chart</Link></p>
+        {figure.hook ? (
+          <p>
+            In the news ({figure.hook.date}): {figure.hook.sentence}{" "}
+            <a href={figure.hook.url} target="_blank" rel="noopener noreferrer" className="underline hover:text-seal">{figure.hook.outlet} ↗</a>
+          </p>
+        ) : null}
         <p><Link to={`/press/${figure.pressSlug}`} className="underline">Press release</Link></p>
       </section>
 
@@ -159,11 +188,11 @@ function ChartsIndex() {
           </li>
         ))}
       </ol>
+      {/* SIM-WALK-001: no /articles link until that index has real content. */}
       <p className="text-[13px] space-x-3">
-        <Link to="/natal" className="underline">Cast your own chart</Link>
-        <Link to="/dignities" className="underline">Dignities and Correspondences</Link>
-        <Link to={`/press/${CHARTS_PRESS_SLUG}`} className="underline">Press release</Link>
-        <Link to="/articles" className="underline">Articles</Link>
+        <Link to="/natal" className="inline-block py-1 underline">Cast your own chart</Link>
+        <Link to="/dignities" className="inline-block py-1 underline">Dignities and Correspondences</Link>
+        <Link to={`/press/${CHARTS_PRESS_SLUG}`} className="inline-block py-1 underline">Press release</Link>
       </p>
     </ChartsChrome>
   );

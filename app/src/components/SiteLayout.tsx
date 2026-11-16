@@ -25,6 +25,13 @@ const NAV = [
   { to: "/charts", label: "Charts" },
 ];
 
+// HUB-FIX-001: footer links to the About, Contact and Privacy pages.
+const INFO_LINKS = [
+  { to: "/about", label: "About" },
+  { to: "/contact", label: "Contact" },
+  { to: "/privacy", label: "Privacy" },
+];
+
 // (inIframe lives in src/lib/env.ts so this file only exports components.)
 
 function SkyPill() {
@@ -81,6 +88,12 @@ export function SiteLayout({ children }: { children: ReactNode }) {
   if (inIframe) return <>{children}</>;
   return (
     <div className="min-h-screen bg-parchment text-ink font-ui">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:bg-card focus:border-2 focus:border-line focus:px-3 focus:py-2 focus:text-[14px]"
+      >
+        Skip to content
+      </a>
       <header className="border-b-4 border-double border-line bg-parchment-deep">
         <div className="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center gap-x-5 gap-y-2">
           <Link to="/" className="text-2xl font-bold tracking-wide font-display font-smallcaps">
@@ -110,14 +123,14 @@ export function SiteLayout({ children }: { children: ReactNode }) {
         </div>
       </header>
       {onClock ? (
-        <div>
+        <main id="main" tabIndex={-1}>
           <div className="max-w-6xl mx-auto px-4 pt-4">
             <PageArt />
           </div>
           {children}
-        </div>
+        </main>
       ) : (
-        <main className="max-w-6xl mx-auto px-4 py-6">
+        <main id="main" tabIndex={-1} className="max-w-6xl mx-auto px-4 py-6">
           <PageArt />
           {children}
         </main>
@@ -126,14 +139,13 @@ export function SiteLayout({ children }: { children: ReactNode }) {
         <div className="max-w-6xl mx-auto px-4 py-4 text-[12px] text-ink-soft flex flex-wrap gap-x-6 gap-y-1">
           <span>☿ The Cunning Man — all arts free of charge</span>
           <span className="italic">For entertainment &amp; study. Not financial, medical, or legal advice.</span>
-          <a
-            href="/downloads/ai-vs-the-sky.pdf"
-            download
-            className="underline hover:text-ink"
-            title="Education only, not financial advice. Futures trading involves substantial risk of loss."
-          >
-            Free download: AI vs the Sky (PDF)
-          </a>
+          <nav aria-label="Site information" className="flex flex-wrap gap-x-4">
+            {INFO_LINKS.map((l) => (
+              <Link key={l.to} to={l.to} className="inline-block py-1 underline hover:text-ink">
+                {l.label}
+              </Link>
+            ))}
+          </nav>
           <span className="ml-auto italic">Tropical · Geocentric · Regiomontanus</span>
         </div>
       </footer>
