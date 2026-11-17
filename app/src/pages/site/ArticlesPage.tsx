@@ -1,9 +1,11 @@
 // Articles (R-EDITORIAL-001 v1.0): /articles index, /articles/<beat>/<slug>
-// Article pages, and a miss for unknown paths (no JSON-LD, canonical /articles).
-// The celebrity beat is /charts (D-1). JSON-LD via structuredData.ts/RouteHead.
+// Article pages, and a miss for unknown paths. Unknown paths render
+// NotFoundPage (no JSON-LD, no canonical, noindex). The celebrity beat is
+// /charts (D-1). JSON-LD via structuredData.ts/RouteHead.
 
 import type { ReactNode } from "react";
 import { Link, useLocation } from "react-router";
+import NotFoundPage from "./NotFoundPage";
 import {
   ARTICLES, ARTICLES_DESCRIPTION, ARTICLES_PATH, ARTICLES_SUBTITLE, ARTICLES_TITLE, ARTICLE_BEATS,
   articleFromPath, articlePath, type ArticleItem,
@@ -21,18 +23,6 @@ function ArticlesChrome({ children }: { children: ReactNode }) {
       </p>
       {children}
     </div>
-  );
-}
-
-function ArticleMiss() {
-  useMeta(ARTICLES_TITLE, ARTICLES_DESCRIPTION);
-  return (
-    <ArticlesChrome>
-      <p className="text-[13px] max-w-3xl mb-4">This article was not found.</p>
-      <p className="text-[13px]">
-        <Link to={ARTICLES_PATH} className="underline">Back to Articles</Link>
-      </p>
-    </ArticlesChrome>
   );
 }
 
@@ -107,5 +97,5 @@ export default function ArticlesPage() {
   if (path === ARTICLES_PATH) return <ArticlesIndex />;
   const article = articleFromPath(path);
   if (article) return <ArticlePage article={article} />;
-  return <ArticleMiss />;
+  return <NotFoundPage />;
 }

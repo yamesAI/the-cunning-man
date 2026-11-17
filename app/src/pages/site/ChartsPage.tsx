@@ -1,10 +1,12 @@
 // Charts (R-CHARTS-001 v1.0): /charts index, one study page per figure, and a
 // miss for unknown slugs. Positions, sect and dignities come from the hub engine
 // (computeChart, as on /natal), never from hand-entered values. JSON-LD comes
-// from src/site/structuredData.ts via RouteHead; the miss emits none.
+// from src/site/structuredData.ts via RouteHead. Unknown slugs render
+// NotFoundPage (no JSON-LD, no canonical, noindex).
 
 import { useMemo, type ReactNode } from "react";
 import { Link, useLocation } from "react-router";
+import NotFoundPage from "./NotFoundPage";
 import {
   CHARTS_DESCRIPTION, CHARTS_PATH, CHARTS_PRESS_SLUG, CHARTS_SUBTITLE, CHARTS_TITLE, CHART_FIGURES, SCORE_NOTE, SITE_INTRO,
   figureAspects, figureChart, figureFromPath, figurePageDescription, figurePageName, figurePath, figureReads, type ChartFigure,
@@ -39,18 +41,6 @@ function ChartsChrome({ children }: { children: ReactNode }) {
       <Disclaimer />
       {children}
     </div>
-  );
-}
-
-function ChartMiss() {
-  useMeta(CHARTS_TITLE, CHARTS_DESCRIPTION);
-  return (
-    <ChartsChrome>
-      <p className="text-[13px] max-w-3xl mb-4">This chart page was not found.</p>
-      <p className="text-[13px]">
-        <Link to={CHARTS_PATH} className="underline">Back to Charts</Link>
-      </p>
-    </ChartsChrome>
   );
 }
 
@@ -165,7 +155,7 @@ function FigurePage({ figure }: { figure: ChartFigure }) {
 
       <nav aria-label="Other charts" className="text-[13px] flex flex-wrap gap-x-3 gap-y-1">
         {siblings.map((f) => (
-          <Link key={f.slug} to={figurePath(f.slug)} className="underline">{f.name}</Link>
+          <Link key={f.slug} to={figurePath(f.slug)} className="inline-block py-1 underline">{f.name}</Link>
         ))}
       </nav>
     </div>
@@ -204,5 +194,5 @@ export default function ChartsPage() {
   if (path === CHARTS_PATH) return <ChartsIndex />;
   const figure = figureFromPath(path);
   if (figure) return <FigurePage figure={figure} />;
-  return <ChartMiss />;
+  return <NotFoundPage />;
 }

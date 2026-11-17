@@ -539,6 +539,7 @@ const STATIC: Record<string, () => Json> = {
       "Press Releases — The Cunning Man",
       "Press releases from The Cunning Man: free Renaissance astrology, chaos magic, and rune tools."
     ),
+    relatedLink: [absUrl("/charts"), absUrl("/articles")],
     mainEntity: {
       "@type": "ItemList",
       numberOfItems: PRESS.length,
@@ -608,35 +609,35 @@ function routeHeadRaw(pathname: string): RouteHead {
   }
 
   // R-CHARTS-001 §2: exact lowercase /charts/<slug> only. Any other child path
-  // is a miss: no JSON-LD, canonical stays on the index.
+  // is a miss: no JSON-LD, no canonical (HUB-FIX-002 MN-1).
   if (/^\/charts\//i.test(p)) {
     const f = figureFromPath(p);
-    if (!f) return { canonical: CHARTS_URL, jsonLd: null };
+    if (!f) return { canonical: null, jsonLd: null };
     return { canonical: absUrl(figurePath(f.slug)), jsonLd: figurePageGraph(f) };
   }
 
   // R-EDITORIAL-001 §3: exact lowercase /articles/<beat>/<slug> only; any other
-  // child path is a miss with no JSON-LD and canonical /articles.
+  // child path is a miss: no JSON-LD, no canonical (HUB-FIX-002 MN-1).
   if (/^\/articles\//i.test(p)) {
     const a = articleFromPath(p);
-    if (!a) return { canonical: ARTICLES_URL, jsonLd: null };
+    if (!a) return { canonical: null, jsonLd: null };
     return { canonical: absUrl(articlePath(a)), jsonLd: articleGraph(a) };
   }
 
   // DIGNITIES-002: exact lowercase /dignities/<key> only. Any other child
-  // path is a miss: no JSON-LD, canonical stays on the index.
+  // path is a miss: no JSON-LD, no canonical (HUB-FIX-002 MN-1).
   if (/^\/dignities\//i.test(p)) {
     const catalog = planetFromPath(p);
-    if (!catalog) return { canonical: absUrl(DIGNITIES_PATH), jsonLd: null };
+    if (!catalog) return { canonical: null, jsonLd: null };
     const path = planetPath(catalog.key);
     return { canonical: absUrl(path), jsonLd: planetPageGraph(catalog) };
   }
 
   // HUB-PAGES-001 library: exact lowercase /library/<id> only. Any other child
-  // path is a miss: no JSON-LD, canonical stays on the index.
+  // path is a miss: no JSON-LD, no canonical (HUB-FIX-002 MN-1).
   if (/^\/library\//i.test(p)) {
     const book = bookFromPath(p);
-    if (!book) return { canonical: absUrl(LIBRARY_PATH), jsonLd: null };
+    if (!book) return { canonical: null, jsonLd: null };
     const path = bookPath(book.id);
     return { canonical: absUrl(path), jsonLd: libraryBookPage(book) };
   }

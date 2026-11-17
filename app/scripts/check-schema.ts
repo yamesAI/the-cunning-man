@@ -365,7 +365,7 @@ items.forEach((it, i) => {
   assert(/aria-label="Breadcrumb"/.test(pageSrc), "book page: visible breadcrumb trail");
   assert(/Back to Library/.test(pageSrc), "book page: visible back link to /library");
   assert(/aria-label="Other books"/.test(pageSrc) && /LIBRARY_BOOKS\.filter\(\(b\) => b\.id !== book\.id\)/.test(pageSrc), "book page: visible links to the three siblings");
-  assert(/This book page was not found/.test(pageSrc), "unknown slug: short miss state");
+  assert(/return <NotFoundPage \/>/.test(pageSrc), "unknown slug: NotFoundPage (MN-1)");
   assert(!/SiteHome/.test(pageSrc), "book miss does not render SiteHome");
   assert(/bookFromPath/.test(pageSrc) && !/PRESS\[0\]/.test(pageSrc), "unknown slug does not copy the press fallback");
   const pageLiterals = [...pageSrc.replace(/className="[^"]*"/g, "").matchAll(/>([^<>{}]+)</g)].map((m) => m[1]).join(" ");
@@ -634,7 +634,7 @@ items.forEach((it, i) => {
   assert(/aria-label="Breadcrumb"/.test(pageSrc), "planet page: visible breadcrumb trail");
   assert(/Back to Dignities and Correspondences/.test(pageSrc), "planet page: visible back link to /dignities");
   assert(/aria-label="Other planets"/.test(pageSrc) && /PLANET_CATALOGS\.filter\(\(p\) => p\.key !== catalog\.key\)/.test(pageSrc), "planet page: visible links to the six siblings");
-  assert(/This planet page was not found/.test(pageSrc), "unknown slug: short miss state");
+  assert(/return <NotFoundPage \/>/.test(pageSrc), "unknown slug: NotFoundPage (MN-1)");
   assert(!/SiteHome/.test(pageSrc), "planet miss does not render SiteHome");
   assert(/planetFromPath/.test(pageSrc) && !/PRESS\[0\]/.test(pageSrc), "unknown slug does not copy the press fallback");
   assert(!/LATER_BOOK1_POINTERS|FURTHER_STUDY_IDS/.test(pageSrc.slice(pageSrc.indexOf("function PlanetPage"), pageSrc.indexOf("function DignitiesIndex"))), "planet page: no Dragon, colours, or further-study books");
@@ -671,23 +671,21 @@ for (const path of ["/nope", "/this-does-not-exist", "/press/nope", "/press/LAUN
   assert(JSON.stringify(pageMeta(path)) === JSON.stringify(NOT_FOUND_META), `${path}: not-found title and description`);
 }
 
-// DIGNITIES-002 unknown planet slugs: miss, no JSON-LD, canonical /dignities
+// DIGNITIES-002 / HUB-FIX-002 MN-1: unknown planet slugs are not-found (no canonical, no JSON-LD)
 for (const path of ["/dignities/x", "/dignities/pluto", "/dignities/uranus", "/dignities/neptune", "/dignities/SATURN", "/dignities/Saturn", "/dignities/saturn/extra", "/dignities/dragon"]) {
   const h = routeHead(path);
-  assert(h.jsonLd === null, `${path}: unknown planet slug -> no JSON-LD`);
-  assert(h.canonical === absUrl(DIGNITIES_PATH), `${path}: canonical is /dignities`);
-  assert(h.canonical !== `${SITE_ORIGIN}/` && !PLANET_CATALOGS.some((c) => h.canonical === absUrl(planetPath(c.key))), `${path}: not home or another planet`);
+  assert(h.jsonLd === null && h.canonical === null, `${path}: unknown planet slug -> no JSON-LD, no canonical`);
+  assert(JSON.stringify(pageMeta(path)) === JSON.stringify(NOT_FOUND_META), `${path}: not-found title and description`);
 }
-assert(routeHead("/dignities/saturn").jsonLd !== null, "/dignities/saturn is a known planet page");
+assert(routeHead("/dignities/saturn").jsonLd !== null && routeHead("/dignities/saturn").canonical === absUrl(planetPath("saturn")), "/dignities/saturn is a known planet page");
 
-// HUB-PAGES-001 unknown library slugs: miss, no JSON-LD, canonical /library
+// HUB-PAGES-001 / HUB-FIX-002 MN-1: unknown library slugs are not-found
 for (const path of ["/library/x", "/library/Christian-Astrology", "/library/CHRISTIAN-ASTROLOGY", "/library/christian-astrology/extra", "/library/esoteric", "/library/ai-vs-the-sky"]) {
   const h = routeHead(path);
-  assert(h.jsonLd === null, `${path}: unknown library slug -> no JSON-LD`);
-  assert(h.canonical === absUrl(LIBRARY_PATH), `${path}: canonical is /library`);
-  assert(h.canonical !== `${SITE_ORIGIN}/` && !LIBRARY_BOOKS.some((b) => h.canonical === absUrl(bookPath(b.id))), `${path}: not home or another book`);
+  assert(h.jsonLd === null && h.canonical === null, `${path}: unknown library slug -> no JSON-LD, no canonical`);
+  assert(JSON.stringify(pageMeta(path)) === JSON.stringify(NOT_FOUND_META), `${path}: not-found title and description`);
 }
-assert(routeHead("/library/christian-astrology").jsonLd !== null, "/library/christian-astrology is a known book page");
+assert(routeHead("/library/christian-astrology").jsonLd !== null && routeHead("/library/christian-astrology").canonical === absUrl(bookPath("christian-astrology")), "/library/christian-astrology is a known book page");
 
 // App.tsx routes all covered
 const app = readFileSync(new URL("../src/App.tsx", import.meta.url), "utf8");
@@ -955,7 +953,7 @@ if (bundle && existsSync(bundle)) {
     assert(!BANNED.test(JSON.stringify({ ...ld, primaryImageOfPage: undefined })), `${where}: no banned wording in JSON-LD`);
     assert(JSON.stringify(routeHead(path + "/")) === JSON.stringify(h), `${where}/: trailing slash is the same page`);
     const up = routeHead(path.toUpperCase());
-    assert(up.jsonLd === null && up.canonical === CH_URL, `${where} upper case: miss, canonical /charts`);
+    assert(up.jsonLd === null && up.canonical === null, `${where} upper case: miss, no canonical`);
     assert(figureFromPath(path)?.slug === f.slug, `${where}: figureFromPath exact match`);
     // sitemap and llms.txt
     assert(sitemap.includes(`<loc>${absUrl(path)}</loc>`) && sitemap.includes(`<loc>${absUrl(`/press/${f.pressSlug}`)}</loc>`), `sitemap: ${path} and its release`);
@@ -974,7 +972,7 @@ if (bundle && existsSync(bundle)) {
   // figure page source: backlinks, breadcrumb, miss
   for (const needle of ['to="/natal"', 'to="/library"', 'to="/library/christian-astrology"', 'to="/dignities"', "planetPath(r.key)", "to={CHARTS_PATH}", "to={`/press/${figure.pressSlug}`}", 'aria-label="Breadcrumb"', 'aria-label="Other charts"', "CHART_FIGURES.filter((f) => f.slug !== figure.slug)"])
     assert(pageSrc.includes(needle), `figure page: ${needle}`);
-  assert(/This chart page was not found/.test(pageSrc) && /figureFromPath/.test(pageSrc) && !/PRESS\[0\]|SiteHome/.test(pageSrc), "chart miss: own miss state, not the press fallback or home");
+  assert(/return <NotFoundPage \/>/.test(pageSrc) && /figureFromPath/.test(pageSrc) && !/PRESS\[0\]|SiteHome/.test(pageSrc), "chart miss: NotFoundPage, not the press fallback or home");
   assert(/figureChart\(figure\)/.test(pageSrc) && !/\d+°\d+′/.test(pageSrc), "figure page: positions come from the engine, none typed in");
   const lit = stripDisclaimer([...pageSrc.replace(/className="[^"]*"/g, "").matchAll(/>([^<>{}]+)</g)].map((m) => m[1]).join(" "));
   assert(!BANNED.test(lit), `charts page literals: no banned wording (${lit.match(BANNED)?.[0]})`);
@@ -1046,18 +1044,20 @@ if (bundle && existsSync(bundle)) {
     assert(sitemap.includes(`<loc>${absUrl(path)}</loc>`), `sitemap: ${path}`);
   }
   const artSrc = readFileSync(new URL("../src/pages/site/ArticlesPage.tsx", import.meta.url), "utf8");
-  assert(/to=\{CHARTS_PATH\}/.test(artSrc) && /This article was not found/.test(artSrc) && /articleFromPath/.test(artSrc) && !/PRESS\[0\]|SiteHome/.test(artSrc), "/articles page: links /charts, own miss state");
+  assert(/to=\{CHARTS_PATH\}/.test(artSrc) && /return <NotFoundPage \/>/.test(artSrc) && /articleFromPath/.test(artSrc) && !/PRESS\[0\]|SiteHome/.test(artSrc), "/articles page: links /charts, miss is NotFoundPage");
   const artLit = stripDisclaimer([...artSrc.replace(/className="[^"]*"/g, "").matchAll(/>([^<>{}]+)</g)].map((m) => m[1]).join(" "));
   assert(!BANNED.test(artLit), "/articles page literals: no banned wording");
 
-  // unknown slugs: miss, no JSON-LD, canonical on the index
+  // unknown slugs: miss, no JSON-LD, no canonical (HUB-FIX-002 MN-1)
   for (const path of ["/charts/x", "/charts/Charles-III", "/charts/CHARLES-III", "/charts/charles-iii/extra", "/charts/charles", "/charts/avril-lavigne", "/charts/king-charles-iii"]) {
     const h = routeHead(path);
-    assert(h.jsonLd === null && h.canonical === CH_URL, `${path}: miss, no JSON-LD, canonical /charts`);
+    assert(h.jsonLd === null && h.canonical === null, `${path}: miss, no JSON-LD, no canonical`);
+    assert(JSON.stringify(pageMeta(path)) === JSON.stringify(NOT_FOUND_META), `${path}: not-found title and description`);
   }
   for (const path of ["/articles/x", "/articles/magic", "/articles/companies/ford", "/articles/celebrity/charles-iii", "/articles/Magic/x"]) {
     const h = routeHead(path);
-    assert(h.jsonLd === null && h.canonical === absUrl(ARTICLES_PATH), `${path}: miss, no JSON-LD, canonical /articles`);
+    assert(h.jsonLd === null && h.canonical === null, `${path}: miss, no JSON-LD, no canonical`);
+    assert(JSON.stringify(pageMeta(path)) === JSON.stringify(NOT_FOUND_META), `${path}: not-found title and description`);
   }
 
   // nav, routes, public files, press room links
@@ -1075,6 +1075,7 @@ if (bundle && existsSync(bundle)) {
   assert(/celebrity/.test(arLine) && /businesses/.test(arLine) && /magic/.test(arLine) && /occult/.test(arLine) && /study and entertainment/.test(arLine) && !BANNED.test(arLine), "llms.txt: /articles line names the four beats");
   const pressIdx = readFileSync(new URL("../src/pages/site/PressIndex.tsx", import.meta.url), "utf8");
   assert(/<Link to="\/charts"/.test(pressIdx) && /<Link to="\/articles"/.test(pressIdx), "/press: visible links to /charts and /articles");
+  assert(JSON.stringify(routeHead("/press").jsonLd!.relatedLink) === JSON.stringify([absUrl("/charts"), absUrl("/articles")]), "/press: relatedLink /charts and /articles");
   const pressRel = readFileSync(new URL("../src/pages/site/PressRelease.tsx", import.meta.url), "utf8");
   assert(/p\.links\.map/.test(pressRel), "press release renders its hub links");
 }
@@ -1116,9 +1117,53 @@ if (bundle && existsSync(bundle)) {
   const aboutText = [noComments(aboutSrc), noComments(src("../src/site/info.ts")), JSON.stringify(routeHead("/about").jsonLd), JSON.stringify(pageMeta("/about"))].join(" ");
   assert(!/david|yames|archia|keeper|founder|owner|\bMr\.?\s|\bMs\.?\s|"Person"/i.test(aboutText), "/about: brand only, no personal name");
   assert(/OPERATOR_NAME/.test(aboutSrc), "/about: names the operator by brand");
-  // Contact: no invented address or handle
+  // MN-3 (a): visible About/Contact text is an allowlist of exact strings (invented names fail)
+  const pageJsx = (s: string) => s.slice(s.indexOf("return ("), s.lastIndexOf(")") + 1);
+  const visibleBits = (s: string) => {
+    const jsx = pageJsx(s);
+    let out = "";
+    for (let i = 0; i < jsx.length; i++) {
+      if (jsx[i] === "{") {
+        let depth = 1, j = i + 1;
+        while (j < jsx.length && depth) {
+          if (jsx[j] === "{") depth++;
+          else if (jsx[j] === "}") depth--;
+          j++;
+        }
+        out += jsx.slice(i + 1, j - 1).trim() === "OPERATOR_NAME" ? OPERATOR_NAME : " ";
+        i = j - 1;
+      } else out += jsx[i];
+    }
+    const text = [...out.replace(/className="[^"]*"/g, "").matchAll(/>([^<>]+)</g)].map((m) => m[1].replace(/&amp;/g, "&").replace(/\s+/g, " ").trim()).filter(Boolean);
+    const titles = [...jsx.matchAll(/\btitle="([^"]+)"/g)].map((m) => m[1]);
+    return [...text, ...titles];
+  };
+  const ABOUT_ALLOWED = new Set([
+    "About The Cunning Man",
+    "A free public grimoire of the old village arts: Renaissance astrology, chaos magic, and the Elder Futhark runes, computed live in your browser. No coin asked, no account, no gate.",
+    "For entertainment & study. Not financial, medical, or legal advice.",
+    "Who runs it",
+    `The Cunning Man is run by ${OPERATOR_NAME}.`,
+    "What is here",
+    "Method",
+    "The art of Lilly and the masters of the shield chart: tropical zodiac, geocentric positions, Regiomontanus houses, essential dignities with Egyptian terms, planetary days and hours, and elections for the fit moment.",
+    "Nothing on this site is a trading signal, a price or financial advice.",
+    "Contact", "Privacy",
+  ]);
+  for (const bit of visibleBits(aboutSrc)) assert(ABOUT_ALLOWED.has(bit), `/about: unexpected visible text ${JSON.stringify(bit)}`);
+  assert(ABOUT_ALLOWED.has(`The Cunning Man is run by ${OPERATOR_NAME}.`) && visibleBits(aboutSrc).includes(`The Cunning Man is run by ${OPERATOR_NAME}.`), "/about: operator line is the exact brand string");
+  // Contact: no invented address or handle; visible text is an allowlist
   const contactSrc = infoPages.slice(infoPages.indexOf("export function ContactPage"), infoPages.indexOf("export function PrivacyPage"));
   assert(!/@|mailto:|https?:\/\//.test(contactSrc) && /no public contact/.test(contactSrc), "/contact: says plainly there is no public contact channel; invents none");
+  const CONTACT_ALLOWED = new Set([
+    "Contact",
+    "For entertainment & study. Not financial, medical, or legal advice.",
+    "How to reach us",
+    "The Cunning Man has no public contact address or account yet. If one is added, it will be listed here.",
+    `The site is run by ${OPERATOR_NAME}.`,
+    "About", "Privacy",
+  ]);
+  for (const bit of visibleBits(contactSrc)) assert(CONTACT_ALLOWED.has(bit), `/contact: unexpected visible text ${JSON.stringify(bit)}`);
   assert(!/"(contactPoint|email|telephone)"/.test(JSON.stringify(routeHead("/contact").jsonLd)), "/contact: no contactPoint, email or telephone in JSON-LD");
   // Privacy: every claim maps to code that exists
   const privacySrc = infoPages.slice(infoPages.indexOf("export function PrivacyPage"));
@@ -1153,6 +1198,25 @@ if (bundle && existsSync(bundle)) {
   const latAsp = figureAspects(figureChart(lat));
   const has = (p1: string, p2: string, k: string) => latAsp.some((a) => ((a.p1 === p1 && a.p2 === p2) || (a.p1 === p2 && a.p2 === p1)) && a.aspectKey === k);
   assert(has("moon", "mars", "square") && has("moon", "saturn", "square") && has("moon", "jupiter", "square") && has("jupiter", "mars", "opposition") && has("jupiter", "saturn", "opposition"), "queen-latifah: engine shows Moon square Mars, Saturn, Jupiter and Jupiter opposite Mars and Saturn");
+  // MN-3 (b): every planet pair the pattern note names must appear in the engine list
+  const PLANET_WORD: Record<string, string> = { sun: "sun", moon: "moon", mercury: "mercury", venus: "venus", mars: "mars", jupiter: "jupiter", saturn: "saturn" };
+  const ASPECT_WORD: Record<string, string> = { square: "square", squares: "square", oppose: "opposition", opposes: "opposition", trine: "trine", trines: "trine", sextile: "sextile", sextiles: "sextile", conjunct: "conjunction", conjunction: "conjunction" };
+  const claimSent = (lat.patternNote ?? "").split(/(?<=\.)\s+/)[0];
+  const noteTok = claimSent.split(/[^A-Za-z]+/).filter((w) => PLANET_WORD[w.toLowerCase()] || ASPECT_WORD[w.toLowerCase()]);
+  const claimed: { p1: string; p2: string; aspectKey: string }[] = [];
+  let subject: string | null = null;
+  let aspect: string | null = null;
+  for (let i = 0; i < noteTok.length; i++) {
+    const w = noteTok[i].toLowerCase();
+    if (PLANET_WORD[w]) {
+      const next = noteTok[i + 1]?.toLowerCase();
+      if (next && ASPECT_WORD[next]) subject = PLANET_WORD[w];
+      else if (subject && aspect) claimed.push({ p1: subject, p2: PLANET_WORD[w], aspectKey: aspect });
+      else subject = PLANET_WORD[w];
+    } else if (ASPECT_WORD[w]) aspect = ASPECT_WORD[w];
+  }
+  assert(claimed.length >= 5, "queen-latifah: pattern note names the T-square pairs");
+  for (const c of claimed) assert(has(c.p1, c.p2, c.aspectKey), `queen-latifah: pattern note claims ${c.p1} ${c.aspectKey} ${c.p2}, which the engine does not show`);
   assert(CHART_FIGURES.filter((f) => f.patternNote).length === 1, "only the Latifah page carries a pattern line");
   assert(/SCORE_NOTE/.test(charts) && /figureAspects\(chart\)/.test(charts), "figure pages explain the score and list engine aspects");
   // Liza hook: only from approved copy (R-CHARTS-001, R-EDITORIAL-001, press copy); not found there, so not on the page
@@ -1165,6 +1229,33 @@ if (bundle && existsSync(bundle)) {
   // SIM-WALK-001: /sky change scan runs in slices and cannot stay stuck
   const sky = src("../src/pages/site/SessionSkyPage.tsx");
   assert(/scanChanges\(/.test(sky) && /catch \{/.test(sky) && /could not be worked out/.test(sky) && !/findChanges\(/.test(sky), "/sky: sliced scan with progress and a failure state");
+
+  // HUB-FIX-002: /clock study wording, MN-2 tap targets, llms.txt info pages
+  const panels = src("../src/components/panels.tsx");
+  const election = src("../src/astro/election.ts");
+  assert(!/Do not begin during these hours/.test(panels), "/clock: old in-tool 'Do not begin during these hours' label is gone");
+  assert(/Hours the old books say to begin nothing new/.test(panels), "/clock: new in-tool study label is present");
+  assert(!/Trading session|trading session/.test(election), "/clock: election.ts has no 'Trading session' comment");
+  assert(/Study window: 06:00–15:00/.test(election) && /6a–3p UTC-5 study window/.test(election), "/clock: election.ts comments say study window");
+  assert(/next 72h · study window 6a–3p UTC-5/.test(panels), "/clock: scan window reads as a study window");
+  assert(!/\btrad(e|es|er|ers|ing)\b|Trading session|trading session/.test(panels + election.replace(/sessionOnly/g, "")), "/clock: no trading wording in the panel or comments");
+  const digSrc = src("../src/pages/site/DignitiesPage.tsx");
+  const libSrc = src("../src/pages/site/LibraryPage.tsx");
+  const homeSrc = src("../src/pages/site/SiteHome.tsx");
+  const pressRelSrc = src("../src/pages/site/PressRelease.tsx");
+  assert(/to=\{planetPath\(p\.key\)\} className="inline-block py-1 underline"/.test(digSrc), "MN-2: /dignities/* sibling planet links are 24 px");
+  assert(/to=\{planetPath\(c\.key\)\} className="inline-block py-1 underline"/.test(digSrc), "MN-2: /dignities index planet links are 24 px");
+  assert(/to=\{bookPath\(b\.id\)\} className="inline-block py-1 underline"/.test(libSrc), "MN-2: library sibling-book links are 24 px");
+  assert(/to=\{figurePath\(f\.slug\)\} className="inline-block py-1 underline"/.test(charts), "MN-2: chart sibling-figure links are 24 px");
+  assert(/className="inline-block py-1 underline hover:text-seal"/.test(pressRelSrc), "MN-2: press-release related links are 24 px");
+  assert(/to="\/press" className="inline-block py-1 mt-2 text-\[13px\] underline"/.test(homeSrc), "MN-2: home 'All press releases' link is 24 px");
+  const llmsTxt = src("../public/llms.txt");
+  const aboutLine = (llmsTxt.match(/^- \/about — [\s\S]*?(?=\n- |\n## )/m) || [""])[0];
+  const contactLine = (llmsTxt.match(/^- \/contact — [\s\S]*?(?=\n- |\n## )/m) || [""])[0];
+  const privacyLine = (llmsTxt.match(/^- \/privacy — [\s\S]*?(?=\n- |\n## )/m) || [""])[0];
+  assert(/free public site/.test(aboutLine) && /Renaissance astrology/.test(aboutLine) && /study/.test(aboutLine), "llms.txt: /about line");
+  assert(/no public contact/.test(contactLine), "llms.txt: /contact line");
+  assert(/No account/.test(privacyLine) && /Nominatim/.test(privacyLine) && /no analytics/.test(privacyLine), "llms.txt: /privacy line");
 
   // M-1: trading-clock release is study-only; slug and Article kept
   const tc = PRESS.find((p) => p.slug === "trading-clock")!;

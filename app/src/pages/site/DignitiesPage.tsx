@@ -3,8 +3,8 @@
 // planets plus the essential-dignities table, and one child page per planet.
 // JSON-LD comes from src/site/structuredData.ts via RouteHead.
 
-import type { ReactNode } from "react";
 import { Link, useLocation } from "react-router";
+import NotFoundPage from "./NotFoundPage";
 import { PLANET_GLYPH, PLANET_LABEL, SIGN_GLYPH, SIGN_LABEL, type PlanetKey, type SignKey } from "@/astro/constants";
 import { LIBRARY_BOOKS } from "@/site/library";
 import {
@@ -84,29 +84,6 @@ function CatalogEntries({ catalog }: { catalog: PlanetCatalog }) {
   );
 }
 
-function DignitiesChrome({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <div>
-      <h1 className="text-3xl font-bold mb-1 font-smallcaps">{title}</h1>
-      <p className="text-[14px] text-ink-soft max-w-3xl mb-2">{DIGNITIES_SUBTITLE}</p>
-      <p className="text-[12px] italic text-ink-soft max-w-3xl mb-4">{DISCLAIMER}</p>
-      {children}
-    </div>
-  );
-}
-
-function PlanetMiss() {
-  useMeta(DIGNITIES_TITLE, DIGNITIES_DESCRIPTION);
-  return (
-    <DignitiesChrome title={`♄ ${DIGNITIES_TITLE}`}>
-      <p className="text-[13px] max-w-3xl mb-4">This planet page was not found.</p>
-      <p className="text-[13px]">
-        <Link to={DIGNITIES_PATH} className="underline">Back to Dignities and Correspondences</Link>
-      </p>
-    </DignitiesChrome>
-  );
-}
-
 function PlanetPage({ catalog }: { catalog: PlanetCatalog }) {
   useMeta(planetPageName(catalog.name), planetPageDescription(catalog));
   const siblings = PLANET_CATALOGS.filter((p) => p.key !== catalog.key);
@@ -142,7 +119,7 @@ function PlanetPage({ catalog }: { catalog: PlanetCatalog }) {
       <CatalogLearnMore catalog={catalog} />
       <nav aria-label="Other planets" className="text-[13px] mt-8 flex flex-wrap gap-x-3 gap-y-1">
         {siblings.map((p) => (
-          <Link key={p.key} to={planetPath(p.key)} className="underline">{p.name}</Link>
+          <Link key={p.key} to={planetPath(p.key)} className="inline-block py-1 underline">{p.name}</Link>
         ))}
       </nav>
     </div>
@@ -165,12 +142,12 @@ function DignitiesIndex() {
         and the old notes on gathering herbs, are historical study text only.
       </p>
       <nav aria-label="On this page" className="text-[13px] mb-6 flex flex-wrap gap-x-3 gap-y-1">
-        <a href="#dignities" className="underline">Essential dignities</a>
+        <a href="#dignities" className="inline-block py-1 underline">Essential dignities</a>
         {PLANET_CATALOGS.map((c) => (
-          <Link key={c.key} to={planetPath(c.key)} className="underline">{c.name}</Link>
+          <Link key={c.key} to={planetPath(c.key)} className="inline-block py-1 underline">{c.name}</Link>
         ))}
-        <a href="#later-book-1" className="underline">Dragon and colours</a>
-        <a href="#further-study" className="underline">Further study</a>
+        <a href="#later-book-1" className="inline-block py-1 underline">Dragon and colours</a>
+        <a href="#further-study" className="inline-block py-1 underline">Further study</a>
       </nav>
 
       <section id="dignities" aria-labelledby="dignities-h" className="mb-10">
@@ -306,5 +283,5 @@ export default function DignitiesPage() {
   if (path === DIGNITIES_PATH) return <DignitiesIndex />;
   const catalog = planetFromPath(path);
   if (catalog) return <PlanetPage catalog={catalog} />;
-  return <PlanetMiss />;
+  return <NotFoundPage />;
 }

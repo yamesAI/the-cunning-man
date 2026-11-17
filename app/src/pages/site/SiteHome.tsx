@@ -133,7 +133,7 @@ export default function SiteHome() {
             </li>
           ))}
         </ul>
-        <Link to="/press" className="inline-block mt-2 text-[13px] underline">All press releases →</Link>
+        <Link to="/press" className="inline-block py-1 mt-2 text-[13px] underline">All press releases →</Link>
       </section>
     </div>
   );

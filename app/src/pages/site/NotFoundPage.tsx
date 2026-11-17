@@ -1,4 +1,4 @@
-// Not-found page (QC-SITE-001 M-2): unknown paths and unknown press slugs.
+// Not-found page (QC-SITE-001 M-2, HUB-FIX-002 MN-1): unknown paths and unknown section slugs.
 // RouteHead gives it noindex, no canonical and no route JSON-LD; on Vercel the
 // static 404.html (written by scripts/prerender.ts) serves it with HTTP 404.
 

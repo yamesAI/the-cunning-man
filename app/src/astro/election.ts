@@ -1,6 +1,6 @@
-// Electional scanner for day-trading entries (traditional electional astrology).
+// Electional scanner (traditional electional astrology).
 // Scores candidate moments over the next 72 hours using Moon condition,
-// angularity of benefics/trade significators, and Ascendant ruler dignity.
+// angularity of Jupiter, Venus and Mercury, and Ascendant ruler dignity.
 // This is traditional astrology, not financial advice.
 
 import type { Horoscope } from "circular-natal-horoscope-js";
@@ -88,7 +88,7 @@ function moonNextAspect(
 
 function aspectPts(planet: PlanetKey, angle: number): { label: string; pts: number } {
   const name = aspectName(angle);
-  // soft aspects to benefics/trade planets are strong; hard aspects to them are not election-grade
+  // soft aspects to Jupiter, Venus and Mercury are strong; hard aspects to them are not election-grade
   const TABLE: Partial<Record<PlanetKey, Record<number, number>>> = {
     jupiter: { 0: 7, 120: 7, 60: 5, 90: -1, 180: -2 },
     venus: { 0: 6, 120: 6, 60: 4, 90: -1, 180: -2 },
@@ -223,7 +223,7 @@ function speedsAt(snaps: Snap[], i: number, stepMs: number): Map<PlanetKey, numb
   return m;
 }
 
-// Trading session: 06:00–15:00 in fixed UTC-5, independent of chart location.
+// Study window: 06:00–15:00 in fixed UTC-5, independent of chart location.
 function inSession(t: number): boolean {
   const h = (((t / 3600000) - 5) % 24 + 24) % 24;
   return h >= 6 && h < 15;
@@ -231,7 +231,7 @@ function inSession(t: number): boolean {
 
 export interface ScanOptions {
   hours?: number;        // horizon, default 72
-  sessionOnly?: boolean; // restrict to 6a–3p UTC-5 trading session, default true
+  sessionOnly?: boolean; // restrict to 6a–3p UTC-5 study window, default true
 }
 
 export function scanElections(now: Date, lat: number, lng: number, opts: ScanOptions = {}): ElectionScan {
@@ -255,7 +255,7 @@ export function scanElections(now: Date, lat: number, lng: number, opts: ScanOpt
   const bestCoarse = pool.reduce((bc, c) => (c.r.score > bc.r.score ? c : bc));
   const t0 = bestCoarse.s.t;
 
-  // refine: 5-min steps within +/-30 min (session-filtered when possible)
+  // refine: 5-min steps within +/-30 min (study-window-filtered when possible)
   const fine: Snap[] = [];
   for (let t = t0 - STEP; t <= t0 + STEP; t += 5 * MIN) {
     fine.push({ t, h: buildHoroscope(new Date(t), lat, lng) });
@@ -269,7 +269,7 @@ export function scanElections(now: Date, lat: number, lng: number, opts: ScanOpt
   const bestFine = finePool.reduce((bc, c) => (c.r.score > bc.r.score ? c : bc));
   const t1 = bestFine.s.t;
 
-  // refine: 1-min steps within +/-5 min (session-filtered when possible)
+  // refine: 1-min steps within +/-5 min (study-window-filtered when possible)
   const finer: Snap[] = [];
   for (let t = t1 - 5 * MIN; t <= t1 + 5 * MIN; t += MIN) {
     finer.push({ t, h: buildHoroscope(new Date(t), lat, lng) });
@@ -282,7 +282,7 @@ export function scanElections(now: Date, lat: number, lng: number, opts: ScanOpt
   const finerPool = finerSession.length ? finerSession : finerScored;
   const best = finerPool.reduce((bc, c) => (c.r.score > bc.r.score ? c : bc)).r;
 
-  // alternates: next-best session coarse peaks at least 6h apart
+  // alternates: next-best study-window coarse peaks at least 6h apart
   const alternates: Array<{ date: Date; score: number }> = [];
   const sorted = [...pool].sort((a, b) => b.r.score - a.r.score);
   for (const c of sorted) {
@@ -292,7 +292,7 @@ export function scanElections(now: Date, lat: number, lng: number, opts: ScanOpt
     if (alternates.length >= 3) break;
   }
 
-  // blocked periods: consecutive session points with hard blockers
+  // blocked periods: consecutive study-window points with hard blockers
   const blocked: BlockedPeriod[] = [];
   let cur: BlockedPeriod | null = null;
   const reasons = new Set<string>();

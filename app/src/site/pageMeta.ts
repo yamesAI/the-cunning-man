@@ -74,8 +74,8 @@ export const NOT_FOUND_META: PageMeta = { title: NOT_FOUND_TITLE, description: N
 
 /**
  * Title and description for a pathname, matching what the page renders:
- * known pages get their own, section misses get their index's, and anything
- * else gets the not-found pair.
+ * known pages get their own; unknown paths and section misses get the
+ * not-found pair (HUB-FIX-002 MN-1).
  */
 export function pageMeta(pathname: string): PageMeta {
   const p = pathname.replace(/\/+$/, "") || "/";
@@ -88,19 +88,19 @@ export function pageMeta(pathname: string): PageMeta {
   }
   if (/^\/charts\//i.test(p)) {
     const f = figureFromPath(p);
-    return f ? { title: figurePageName(f), description: figurePageDescription(f) } : STATIC_META[CHARTS_PATH];
+    return f ? { title: figurePageName(f), description: figurePageDescription(f) } : NOT_FOUND_META;
   }
   if (/^\/articles\//i.test(p)) {
     const a = articleFromPath(p);
-    return a ? { title: `${a.title} — The Cunning Man`, description: a.summary } : STATIC_META[ARTICLES_PATH];
+    return a ? { title: `${a.title} — The Cunning Man`, description: a.summary } : NOT_FOUND_META;
   }
   if (/^\/dignities\//i.test(p)) {
     const c = planetFromPath(p);
-    return c ? { title: planetPageName(c.name), description: planetPageDescription(c) } : STATIC_META[DIGNITIES_PATH];
+    return c ? { title: planetPageName(c.name), description: planetPageDescription(c) } : NOT_FOUND_META;
   }
   if (/^\/library\//i.test(p)) {
     const b = bookFromPath(p);
-    return b ? { title: bookPageName(b.title), description: bookPageDescription(b) } : STATIC_META[LIBRARY_PATH];
+    return b ? { title: bookPageName(b.title), description: bookPageDescription(b) } : NOT_FOUND_META;
   }
   return NOT_FOUND_META;
 }
