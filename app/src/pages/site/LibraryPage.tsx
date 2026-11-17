@@ -4,38 +4,13 @@
 // source. No full text is hosted. JSON-LD comes from src/site/structuredData.ts
 // via RouteHead.
 
-import type { ReactNode } from "react";
 import { Link, useLocation } from "react-router";
+import NotFoundPage from "./NotFoundPage";
 import {
   LIBRARY_BOOKS, LIBRARY_DESCRIPTION, LIBRARY_PATH, LIBRARY_SUBTITLE, LIBRARY_TERMS, LIBRARY_TITLE,
   bookFromPath, bookPageDescription, bookPageName, bookPath, type LibraryBook,
 } from "@/site/library";
 import { useMeta } from "@/hooks/useMeta";
-
-function LibraryChrome({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <div>
-      <h1 className="text-3xl font-bold mb-1 font-smallcaps">{title}</h1>
-      <p className="text-[14px] text-ink-soft max-w-3xl mb-2">{LIBRARY_SUBTITLE}</p>
-      <p className="text-[12px] italic text-ink-soft max-w-3xl mb-6">
-        For entertainment &amp; study. Not financial, medical, or legal advice.
-      </p>
-      {children}
-    </div>
-  );
-}
-
-function BookMiss() {
-  useMeta(LIBRARY_TITLE, LIBRARY_DESCRIPTION);
-  return (
-    <LibraryChrome title={`📜 ${LIBRARY_TITLE}`}>
-      <p className="text-[13px] max-w-3xl mb-4">This book page was not found.</p>
-      <p className="text-[13px]">
-        <Link to={LIBRARY_PATH} className="underline">Back to Library</Link>
-      </p>
-    </LibraryChrome>
-  );
-}
 
 function BookPage({ book }: { book: LibraryBook }) {
   useMeta(bookPageName(book.title), bookPageDescription(book));
@@ -78,7 +53,7 @@ function BookPage({ book }: { book: LibraryBook }) {
       </div>
       <nav aria-label="Other books" className="text-[13px] flex flex-wrap gap-x-3 gap-y-1">
         {siblings.map((b) => (
-          <Link key={b.id} to={bookPath(b.id)} className="underline">{b.title}</Link>
+          <Link key={b.id} to={bookPath(b.id)} className="inline-block py-1 underline">{b.title}</Link>
         ))}
       </nav>
     </div>
@@ -148,5 +123,5 @@ export default function LibraryPage() {
   if (path === LIBRARY_PATH) return <LibraryIndex />;
   const book = bookFromPath(path);
   if (book) return <BookPage book={book} />;
-  return <BookMiss />;
+  return <NotFoundPage />;
 }

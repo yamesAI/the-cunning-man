@@ -25,7 +25,7 @@ export default function PressRelease() {
         {p.links ? (
           <nav aria-label="Related pages" className="text-[13px] flex flex-wrap gap-x-3 gap-y-1 mb-3">
             {p.links.map((l) => (
-              <Link key={l.to} to={l.to} className="underline hover:text-seal">{l.label}</Link>
+              <Link key={l.to} to={l.to} className="inline-block py-1 underline hover:text-seal">{l.label}</Link>
             ))}
           </nav>
         ) : null}

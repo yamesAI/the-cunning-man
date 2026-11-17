@@ -55,6 +55,12 @@ For entertainment and study — not financial, medical, or legal advice.
 - /charts/queen-latifah — Queen Latifah: a study page reading the natal chart by Lilly's essential dignities, birth data from Astro-Databank, Rodden rating AA.
 - /articles — Articles: the editorial programme in four beats (astro celebrity at /charts,
   businesses, magic and occult), for study and entertainment.
+- /about — About: a free public site of Renaissance astrology, chaos magic and rune tools,
+  run by CunningMan AstroTrading. For entertainment and study.
+- /contact — Contact: the site has no public contact channel yet; this page says so plainly.
+- /privacy — Privacy: what the site stores and sends. No account, no analytics, no cookies set
+  by the site. Natal and place details stay in the visitor's browser; city search goes to
+  OpenStreetMap Nominatim.
 
 ## Technical notes for agents
 
